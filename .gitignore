@@ -25,3 +25,6 @@
 *.synctex.gz(busy)
 *.pdfsync
 *.pdf
+
+**/figure/*
+**/cache/*

@@ -1,0 +1,20 @@
+\documentclass[a4paper]{article} %% Classe do documento
+\usepackage[margin=2cm]{geometry} %% Dimens?es das margens
+\usepackage[brazil]{babel} %% Idioma
+\usepackage[utf8x]{inputenc} %% Codifica??o de caracteres
+\usepackage{amsmath} %% S?mbolos/express?es/ambientes matem?ticos
+\usepackage{graphicx} %% Inserir figuras em qualquer extens?o
+\usepackage[svgnames]{xcolor} %% Usar cores pelo nome
+\usepackage{float}
+\usepackage{multicol}
+\usepackage{indentfirst}
+\usepackage{array}    % Uma implementação melhor do tabular
+\usepackage{booktabs} % Linhas horizontais para tabelas
+\usepackage{multirow} % Permite uma célula de várias linha
+\usepackage{vwcol}
+
+\begin{document}
+
+Testando
+
+\end{document}

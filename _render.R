@@ -8,4 +8,5 @@ cat("## @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ ##",
     sep = "\n")
 
 ## Compile os documentos
-sapply(grep('.Rnw$', dir(), value = TRUE), knitr::knit)
+## sapply(grep('.Rnw$', dir(), value = TRUE), knitr::knit)
+knitr::knit2pdf("teste.Rnw")

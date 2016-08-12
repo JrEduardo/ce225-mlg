@@ -52,7 +52,7 @@ opts_chunk$set(tidy=FALSE,
                fig.height=6,
                fig.pos="H")
 
-library(ROCR)
+## library(ROCR)
 source("misc-fun.R")
 
 da <- read.table("./data/dengue.dat",

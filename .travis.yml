@@ -4,5 +4,5 @@ before_script:
   - chmod +x ./_deploy.sh
 
 script:
-  - Rscript -e "sapply(grep('.Rnw$', dir(), value = TRUE), knitr::knit2pdf)"
+  - Rscript -e "source('_render.R')"
   - ./_deploy.sh

@@ -1,0 +1,11 @@
+Package: ce225
+Title: Disciplina Modelos Lineares Generalizados
+Version: 0.0.1
+Imports:
+    knitr,
+    xtable,
+    lattice,
+    latticeExtra,
+    car,
+    MASS
+    

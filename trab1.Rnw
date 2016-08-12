@@ -1,0 +1,623 @@
+\documentclass[a4paper]{article} %% Classe do documento
+\usepackage[margin=2cm]{geometry} %% Dimens?es das margens
+\usepackage[brazil]{babel} %% Idioma
+\usepackage[utf8x]{inputenc} %% Codifica??o de caracteres
+\usepackage{amsmath} %% S?mbolos/express?es/ambientes matem?ticos
+\usepackage{graphicx} %% Inserir figuras em qualquer extens?o
+\usepackage[svgnames]{xcolor} %% Usar cores pelo nome
+\usepackage{float}
+\usepackage{multicol}
+\usepackage{indentfirst}
+
+\newcommand{\undertilde}[1]{\underset{\widetilde{}}{#1}}
+
+\begin{document}
+\begin{titlepage}
+
+  \center{\rule{15cm}{2pt}}
+  \begin{center}{\bf Universidade Federal do Paraná\\
+      Setor de Ciências Exatas\\
+      Departamento de Estatística\\[7.5cm]
+
+      {\large
+        RELAÇÃO ENTRE EXPECTATIVA DE VIDA E CARACTERÍSTICAS DOS ESTADOS
+        NORTE-AMERICANOS ENTRE OS ANOS DE 1969 E 1970}\\[3cm]
+
+      { CE225 - Modelos Lineares Generalizados}\\[2cm]
+
+      { Eduardo Elias Ribeiro Junior}
+
+      % \end{minipage}
+      \vfill
+      Curitiba, 05 de setembro de 2014
+      \center{\rule{15cm}{2pt}}}
+  \end{center}
+\end{titlepage}
+
+\tableofcontents
+
+\pagebreak
+%% chunk de configuração do knitr para a sessão
+<<setup, include=FALSE, cache=FALSE>>=
+
+library(knitr)
+library(xtable)
+opts_chunk$set(tidy=FALSE,
+               size="small",
+               cache=TRUE,
+               echo=FALSE,
+               fig.align="center",
+               fig.width=6,
+               fig.height=4,
+               fig.pos="H")
+
+library(car)
+source("misc-fun.R")
+
+@
+
+\section{Introdução}
+O presente estudo tem por objetivo explicar e quantificar, em estados
+norte-americanos, a relação entre a expectativa de vida nos anos 1969 e
+1970 e algumas características destes estados. As características
+mencionadas são: população estimada em julho de 1975, renda per capita
+em 1974 em USD (United States dollar), proporção de analfabetos em 1970,
+taxa de criminalidade por 100 mil habitantes em 1976, porcentagem de
+estudantes que concluem o segundo grau em 1970, número de dias no ano
+com temperatura abaixo de 0°C na cidade mais importante do estado e área
+do estado em milhas quadradas. Substituiremos duas características,
+população estimada e área do estado pela característica densidade
+demográfica que será expressa pelo quociente
+$\frac{\text{população}}{\text{área}}$.
+
+As características, denominadas como variáveis independentes, escolhidas
+para compor estudos desta natureza são, em geral, escolhidas
+subjetivamente levando em consideração o conhecimento prévio do
+pesquisador em relação ao fenômeno estudado. Neste caso é razoável a
+escolha destas sete variáveis para explicar a expectativa de vida, pois
+a priori parece haver correlação entre elas. Abaixo temos as dez
+primeiras observações do respectivo conjunto de dados.
+
+<<visual, results='asis', echo=FALSE>>=
+
+da <- read.table("./data/reg3.dat")
+names(da) <- c("estad",
+               "popul",
+               "renda",
+               "analf",
+               "expvi",
+               "crime",
+               "estud",
+               "ndias",
+               "area")
+da$densi <- with(da, popul/area)
+
+@
+
+\begin{table}[H]
+  \centering
+  \caption{Conjunto de dados}
+  \begin{tabular}{lccccccc}
+    \hline
+    Estado & Renda & Analfabetos & Expec. Vida &
+    Crime & Estudos & Dias Frios & Densidade \\
+    \hline
+    Alabama & 69.05 & 3624 & 2.10 & 15.10 & 41.30 &  20 & 0.07 \\
+    Alaska & 69.31 & 6315 & 1.50 & 11.30 & 66.70 & 152 & 0.00 \\
+    Arizona & 70.55 & 4530 & 1.80 & 7.80 & 58.10 &  15 & 0.02 \\
+    Arkansas & 70.66 & 3378 & 1.90 & 10.10 & 39.90 &  65 & 0.04 \\
+    California & 71.71 & 5114 & 1.10 & 10.30 & 62.60 &  20 & 0.14 \\
+    Colorado & 72.06 & 4884 & 0.70 & 6.80 & 63.90 & 166 & 0.02 \\
+    Connecticut & 72.48 & 5348 & 1.10 & 3.10 & 56.00 & 139 & 0.64 \\
+    Delaware & 70.06 & 4809 & 0.90 & 6.20 & 54.60 & 103 & 0.29 \\
+    Florida & 70.66 & 4815 & 1.30 & 10.70 & 52.60 &  11 & 0.15 \\
+    Georgia & 68.54 & 4091 & 2.00 & 13.90 & 40.60 &  60 & 0.08 \\
+    \hline
+  \end{tabular}
+  \label{Conjunto de dados}
+\end{table}
+
+\section{Metodologia}
+Relações entre variável resposta e variáveis explicativas, como a
+descrita neste problema, podem ser analisadas em estatística com o
+auxílio da teoria de modelos lineares, mais especificamente regressão
+linear. Em nosso caso trabalharemos com regressão linear múltipla, cuja
+especificação é descrita abaixo:
+\begin{equation}
+  \begin{gathered}
+    Y|\undertilde{X} \sim Normal(\mu_{y|\undertilde{x}}, \sigma^{2})\\
+    E(Y|\undertilde{X}) = \mu_{y|\undertilde{x}} = \beta_{0} +
+    \beta_{1}x_{1} + \beta_{1}x_{2} + \dots + \beta_{p}x_{p}
+  \end{gathered}
+\end{equation}
+
+Uma abordagem de regressão linear múltipla nos permitirá avaliar a
+variável de interesse por meio de variáveis explicativas, comumente
+chamadas de variáveis regressoras. Esta análise levará em conta um
+conjunto de variáveis regressoras com a finalidade de explicar a
+variação da variável independente.
+
+\section{Modelagem}
+Nesta seção faremos todas as etapas de análise dos dados desde descrição
+até predição pelo modelo proposto. As subseções presentes nesta seção
+carregarão a notação abaixo a fim de simplificar a escrita das
+variáveis:
+
+\begin{itemize}
+  \item \textbf{expvi}: expectativa de vida nos anos 1969 e 1970 .
+  \item \textbf{renda}: renda per capita em 1974 em USD (United States
+    dollar).
+  \item \textbf{analf}: proporção de analfabetos em 1970.
+  \item \textbf{crime}: taxa de criminalidade por 100 mil habitantes em
+    1976.
+  \item \textbf{estud}: porcentagem de estudantes que concluem o segundo
+    grau em 1970.
+  \item \textbf{ndias}: número de dias no ano com temperatura abaixo de
+    0°C na cidade mais importante do estado.
+  \item \textbf{densi}: densidade demográfica em habitantes por milhas
+    quadradas.
+\end{itemize}
+
+\subsection{Análise descritiva e exploratória}
+Toda análise de dados incia-se por uma análise descritiva. A análise
+descritiva ilustra como serão as posteriores análises, indicando
+possíveis problemas e sugestões de modelagem.
+
+Inicialmente exploraremos as medidas resumo das variáveis.
+
+<<descritivatab, echo=FALSE, results='asis'>>=
+
+vars <- c("expvi", "renda", "analf", "crime", "estud", "ndias", "densi")
+m1 <- apply(da[, vars], 2, summary)
+
+xt <- xtable(as.data.frame(m1),
+             caption = "Medidas resumo", label = "descr1")
+
+print(xt,  include.rownames=TRUE, table.placement="H",
+      caption.placement="top")
+
+@
+
+De acordo com a \ref{descr1} temos indícios de assimetria na
+disposição dos valores de proporção de analfabetos, taxa de
+criminalidade e densidade demográfica devido as medidas de posição
+presentes na tabela. A assimetria dos dados, ou ainda, observações muito
+dispersas nas variáveis explicativas podem acarretar em pontos
+influentes no estudo.
+
+O interesse neste caso será avaliar a variável expectativa de vida em
+função das demais variáveis explicativas por meio de uma regressão
+linear, portanto uma análise exploratória visando avaliar
+preliminarmente se há relação entre essas variáveis é imprescindível. Na
+figura \ref{fig:descritiva2} são exibidos 49 gráficos que ilustram a
+relação de variáveis combinadas duas a duas, ou seja, temos todas as
+possíveis combinações de duas variáveis.
+
+<<descritiva2, echo=FALSE, fig.pos="H", fig.cap="Representação Gráfica das Relações entre as Variáveis", fig.height=10, fig.width=16>>=
+
+scatterplotMatrix(da[, vars], diagonal="boxplot",
+                  col=c("gray60", "darkblue", "black"))
+
+@
+
+A figura \ref{fig:descritiva2} apresenta uma matriz 7x7 de gráficos,
+sendo que na diagonal principal temos gráficos univariados, mais
+especificamente boxplots das variáveis em estudo, e nesta diagonal
+percebe-se a assimetria de algumas variáveis, como também visto na
+tabela \ref{descr1}. O que mais chama atenção dentre os gráficos
+univariados é o boxplot referente a densidade demográfica, pois neste
+percebe-se uma fortíssima assimetria à direita. Para os gráficos fora da
+diagonal principal, são exibidos gráficos bivariados identidade acima e
+abaixo da diagonal, que somente invertem seus eixos. Explorando esses
+gráficos temos na primeira linha a variável de interesse contra as
+demais variáveis e podemos observar a tendência da variável resposta em
+relação as variáveis explicativas. Agora excetuando a primeira linha
+temos os gráficos das variáveis regressoras duas a duas e nestes
+gráficos é desejável que não se tenha evidências de relação linear entre
+elas, evitando a presença de colinearidade na análise. Visualmente a
+tendência linear mais evidente parece estar entre as variáveis proporção
+de analfabetos contra taxa de criminalidade e proporção de analfabetos
+contra porcentagem de estudantes concluintes do segundo grau. A fim de
+quantificar a relação linear entre as variáveis explicativas, para que
+não tenhamos problemas de colinearidade, vamos explorar a matriz de
+correlação entre elas.
+
+<<descritiva3, echo=FALSE, results='asis'>>=
+
+x <- as.matrix(da[, vars])
+rxx <- cor(x)
+core <- xtable(rxx, caption="Matrix de Correlação entre as Variáveis",
+               label="correla")
+
+print(core,  include.rownames=TRUE, table.placement="H",
+      caption.placement="top")
+
+@
+
+Na tabela \ref{correla} a diagonal principal é preenchida com todos os
+elementos iguais a 1, pois a correlação de uma variável com ela mesma é
+perfeita. Observando os elementos fora da diagonal principal temos o
+maior valor absoluto igual a 0.70, proveniente da correlação entre as
+variáveis proporção de analfabetos e taxa de criminalidade, também
+observado nos gráficos da figura \ref{fig:descritiva2}, porém não
+assumiremos como uma correlação forte para abandonarmos uma das
+variáveis antes de partirmos para os modelos de regressão.
+
+\subsection{Modelo com todos os efeitos aditivos}
+
+Após análise descritiva continuamos com todas as variáveis como
+candidatas a compor ao modelo. Como primeira opções ajustaremos um
+modelo aditivo saturado, ou seja, incluindo todas as variáveis sem
+considerar interação. Interações entre as variáveis não serão
+consideradas neste estudo, pois todas as variáveis explicativas são
+numéricas. Interações neste caso dificultam a interpretação dos
+parâmetros do modelo e não auxiliam na identificação das relações
+marginais, interesse de nosso estudo.
+
+A forma do modelo ajustado será conforme descrito na seção 2, abaixo
+temos sua representação com os respectivos nomes das variáveis:
+\begin{equation}
+  \begin{gathered}
+    Y|\undertilde{X} ~ Normal(\hat{\mu_{y|\undertilde{x}}}, \sigma^{2})\\
+    \hat{\mu_{y|\undertilde{x}}}= \hat{\beta_{0}} + \hat{\beta_{1}}renda +
+    \hat{\beta_{2}}analf + \hat{\beta_{3}}crime + \hat{\beta_{4}}estud +
+    \hat{\beta_{5}}densi + \hat{\beta_{6}}ndias
+  \end{gathered}
+\end{equation}
+
+Após modelo ajustado faremos a seleção das variáveis que permanecerão no
+modelo final, porém vamos realizar um breve diagnóstico do modelo
+saturado para averiguação da adequação do modelo.
+
+<<modelmax1, echo=FALSE, fig.pos="ht", fig.cap="Análise de Diagnóstico do Modelo Saturado", fig.height=8, fig.width=10>>=
+
+m1 <- lm(expvi ~ renda + analf + crime + estud + densi + ndias,
+         data=da)
+
+par(mfrow=c(2,2))
+plot(m1, which=1)
+plot(m1, which=2)
+qqline(rstandard(m1), col="red", lty=2)
+plot(m1, which=c(3,5))
+layout(1)
+
+@
+
+Na figura \ref{fig:modelmax1} não notamos nenhuma fuga dos pressupostos
+para o modelo. No primeiro dos gráficos exibidos os pontos parecem se
+comportar aleatoriamente com resíduos positivos e negativos de
+magnitudes aleatórias considerando os valores preditos. No segundo
+gráfico temos os resíduos padronizados se dispondo sobre a linha teórica
+da distribuição Normal, com isso não rejeitaremos a hipótese dos
+resíduos se distribuírem normalmente. No terceiro gráfico não temos
+evidência de tendência e novamente percebemos uma disposição aleatória
+dos pontos não caracterizando uma relação média variância. O último
+gráfico nos indica suspeitos a outliers, ou seja, pontos fora das bandas
+em vermelho seccionado podem ser classificados como observações
+influentes, neste caso não temos indícios de observações influentes. Com
+isso podendo seguir com as demais análises a partir deste modelo.
+
+\subsection{Seleção de variáveis}
+Um ponto importante no processo de modelagem é a seleção de variáveis
+para compor o melhor modelo. A nomenclatura "melhor modelo" não seria a
+mais adequada ao se tratar de modelos estatísticos, a nomenclatura
+correta para a análise nesta seção seria "escolha do melhor modelo
+segundo algum critério". O critério adotado é subjetivo, sendo função do
+estatístico justificar o critério adotado.
+
+A seleção de variáveis para este trabalho será considerando o algoritmo
+\textbf{stepwise}, que fará a inclusão e exclusão de variáveis no modelo
+simultaneamente. O algoritmo considerará como medida de seleção o AIC
+(Critério de Informação de Akaike), cujo a fórmula está descrita abaixo:
+$$ AIC_{model} = -2log(L) + 2p, \left\{\begin{matrix}
+    L: \text{Verossimilhança}\\
+    p: \text{número de parâmetros}
+  \end{matrix}\right.$$
+
+O AIC é inversamente proporcional à log-verossimilhança do modelo e
+diretamente proporcional ao número de parâmetros, ou seja, o critério
+busca um modelo parcimonioso, penalizando modelos com um número
+excessivo de parâmetros. Apresentaremos no quadro 1 a última iteração do
+algoritmo stepwise com as variáveis selecionadas e as descartadas no
+modelo.
+
+<<selecao1, echo=FALSE>>=
+
+## m0 <- step(m1, direction="both", scale=anova(m1)$"Mean Sq"[7], test="F")
+m0 <- lm(expvi ~ crime + estud + densi + ndias, data=da)
+
+@
+
+\vspace{0.3cm}
+\begin{center}
+  Quadro 1: Algoritmo Stepwise para seleção de variáveis
+  \begin{knitrout}\small
+    \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{verbatim}
+## Step:  AIC=4.03
+## expvi ~ crime + estud + densi + ndias
+##
+##         Df Sum of Sq    RSS      Cp F value    Pr(>F)
+## <none>               23.766  4.0341
+## - densi  1     1.606 25.372  5.0100  3.0412  0.088005 .
+## + renda  1     0.544 23.221  5.0256  1.0313  0.315413
+## + analf  1     0.058 23.708  5.9275  0.1068  0.745403
+## - estud  1     4.294 28.060  9.9911  8.1316  0.006546 **
+## - ndias  1     4.682 28.447 10.7086  8.8648  0.004669 **
+## - crime  1    33.342 57.108 63.8122 63.1333 4.136e-10 ***
+## ---
+## Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+\end{verbatim}
+    \end{kframe}
+  \end{knitrout}
+\end{center}
+
+Pelo quadro 1 podemos verificar que as variáveis renda per capita e
+proporção de analfabetos foram descartadas do modelo (note o sinal
+positivo ao lado das variáveis) resultando no modelo com AIC = 4.03,
+sugerido pelo algoritmo. Ainda neste quadro foram exibidos as
+significâncias dos efeitos das variáveis considerando o teste F, perceba
+que mesmo adotando este outro critério as variáveis renda per capita e
+proporção de analfabetos seriam retiradas do modelo ao nível de
+significância de 10\%.
+
+Nas próximas subseções seguiremos as análises considerando agora somente
+as variáveis taxa de criminalidade, porcentagem de estudantes do segundo
+grau, densidade demográfica e número de dias com temperatura abaixo de
+0°C na cidade mais importante do estado para especificação do modelo.
+
+\subsection{Modelo proposto}
+Novamente especificaremos o modelo aditivo mas agora considerando
+somente as variáveis selecionadas na subseção anterior. O modelo adotado
+é:
+\begin{equation}
+  \begin{aligned}
+    Y|\undertilde{X} \sim Normal(\hat{\mu_{y|\undertilde{x}}}, \sigma^{2})\\
+    \hat{\mu_{y|\undertilde{x}}} = \hat{\beta_{0}} +
+    \hat{\beta_{1}}crime + \hat{\beta_{2}}estud +
+    \hat{\beta_{3}}densi + \hat{\beta_{4}}ndias
+  \end{aligned}
+\end{equation}
+
+No quadro 2 apresentaremos o resumo do modelo, com parâmetros estimados
+e respectivos testes marginais (considerando a distribuição
+\textit{t-student}) para verificar a significância dos efeitos
+estimados.
+
+\vspace{0.3cm}
+{\center Quadro 2: Resumo do modelo (2): estimativas, erros-padrão e
+  significâncias}
+<<modelprop1, echo=FALSE>>=
+
+summary(m0)
+
+@
+
+No quadro 2 percebemos que, mesmo após utilizado o critério de AIC para
+selecionar as variáveis, temos o efeito da variável densidade
+demográfica não significativo, considerando o teste t ao nível de
+significância de 5\%, então optaremos por abandonar esta variável do
+modelo.
+
+O novo modelo terá
+\begin{equation}
+  \hat{\mu_{y|\undertilde{x}}} = \hat{\beta_{0}} + \hat{\beta_{1}}crime +
+  \hat{\beta_{2}}estud + \hat{\beta_{3}}ndias
+\end{equation}
+
+E novamente apresentaremos o quadro resumo do novo modelo especificado:
+
+\vspace{0.3cm}
+{\center Quadro 3: Resumo do modelo (3): estimativas, erros-padrão e
+  significâncias}
+<<modelprop2, echo=FALSE>>=
+
+m0 <- lm(expvi ~ crime + estud + ndias, data=da)
+summary(m0)
+
+@
+
+Aqui percebemos que todas as variáveis inclusas no modelo são
+significativas ao nível de significância de 1\%. Além disto percebemos,
+pelas estimativas dos parâmetros, que a relação entre expectativa de
+vida e taxa de criminalidade é decrescente, ou seja, quanto maior a taxa
+de criminalidade menor a expectativa de vida, o mesmo acontece com o
+número de dias com temperatura abaixo de zero, somente observamos uma
+relação crescente entre expectativa de vida e percentual de estudantes
+concluintes do segundo grau, ou seja, quanto maior o percentual de
+estudantes concluintes do segundo grau maior a expectativa de vida,
+estas relações serão abordadas com detalhe na seção 3.6.
+
+\subsection{Análise de diagnóstico}
+Antes de validar qualquer análise previamente feita com o modelo devemos
+realizar uma análise de diagnóstico. A análise de diagnóstico tem o
+papel de verificar a adequação do modelo aos dados, averiguar se todos
+os pressupostos considerados são atendidos e verificar observações
+influentes.
+
+Faremos a análise gráfica em três etapas. Na primeira etapa
+verificaremos os pressupostos, na segunda se existe a necessidade de
+fatores quadráticos e na terceira se há observações isoladas
+influenciando significativamente o modelo.
+
+\begin{itemize}
+\item Verificação dos pressupostos
+\end{itemize}
+
+<<diag1, echo=FALSE, fig.pos="H", fig.cap="Análise de Diagnóstico do Modelo Proposto - Pressupostos", fig.height=4, fig.width=10>>=
+
+par(mfrow=c(1,3));
+plot(m0, which=1)
+plot(m0, which=2)
+qqline(rstandard(m0), col="red", lty=2)
+plot(m0, which=3)
+
+@
+
+Estes gráficos apresentam a mesma interpretação da figura 2 não há
+evidências de fuga de pressupostos.
+
+\begin{itemize}
+\item Necessidade de fatores quadráticos
+\end{itemize}
+
+\vspace{0.3cm}
+{\center Quadro 4: Adequação do modelo com relação a fatores
+  quadráticos}
+
+<<diag2, echo=FALSE>>=
+
+residualPlots(m0, plot=FALSE)
+
+@
+
+No quadro 4 são exibidos as estatísticas t, calculadas para o fator
+quadrático se incluído no modelo apresentando também o p-valor associado
+ao fator quadrático. Com isso concluímos que não há a necessidade de
+inclusão de fatores quadráticos no modelo.
+
+\begin{itemize}
+\item Observações Influentes
+\end{itemize}
+
+<<diag3, echo=FALSE, fig.pos="H", fig.cap="Análise de Diagnóstico do Modelo Proposto - Observações Influentes", fig.height=4, fig.width=10>>=
+
+par(mfrow=c(1,3)); plot(m0, which=4:6)
+
+@
+
+Na figura \ref{fig:diag3} temos três gráficos sendo que o primeira
+avalia a medida distância de Cook, usualmente adota-se a regra de
+observações com distância de Cook maior que 1 como suspeitas a outliers,
+no gráfico temos somente a observação 11 com distância de Cook próxima a
+0.2, portanto sem indícios de pontos influentes neste gráfico. Os outros
+dois gráficos  levam em conta o poder de alavancagem de cada observação
+e novamente não temos observações suspeitas.
+
+É importante lembrar que a análise de diagnóstico foi subdivida, mas as
+três etapas não são independentes, geralmente quando uma das etapas
+aponta alguma incoerência na análise os demais também a indicam.
+
+\subsection{Predições marginais}
+O modelo proposto após as análises contém três variáveis explicativas e
+uma de interesse caracterizando a modelagem em um hiperplano de quatro
+dimensões, portanto a visualização gráfica conjunta é impossível. Porém
+podemos visualizar graficamente as relações marginais, variando uma das
+variáveis explicativas e fixando as outras duas. Os gráficos marginais
+são exibidos na figura \ref{fig:pred1}:
+
+<<pred1, echo=FALSE, fig.pos="H", fig.cap="Gráficos Marginais do Modelo Proposto", fig.height=4.5, fig.width=10>>=
+
+## Estetica (tamanho dos labels)
+cex <- 0.7
+cex1 <- 0.8
+
+## Variando crime
+pred1 <- expand.grid(crime=seq(1, 15, by=0.5),
+                     estud=mean(da$estud),
+                     ndias=115)
+aux1 <- predict(m0, newdata=pred1, interval="confidence")
+pred1 <- cbind(pred1, aux1)
+
+var1 <- xyplot(fit~crime, pred1, type=c("l","g"),
+               ly=pred1$lwr, uy=pred1$upr,
+               col="blue",
+               prepanel=prepanel.ciH,
+               panel=panel.ciH,
+               ylab=list(label ="Expectativa de Vida", cex=cex),
+               main=list(label ="Variável crime\nEstimativa -0.283",
+                         cex=cex1),
+               xlab=list(label ="Taxa de Criminalidade", cex=cex))
+
+
+## Variando estud
+pred2 <- expand.grid(crime=mean(da$crime),
+                     estud=seq(37, 67, by=0.5),
+                     ndias=115)
+aux2 <- predict(m0, newdata=pred2, interval="confidence")
+pred2 <- cbind(pred2, aux2)
+
+var2 <- xyplot(fit~estud, pred2, type=c("l","g"),
+               ly=pred2$lwr, uy=pred2$upr,
+               col="blue",
+               prepanel=prepanel.ciH,
+               panel=panel.ciH,
+               ylab=list(label ="Expectativa de Vida", cex=cex),
+               main=list(label
+                         ="Variável estud\nEstimativa 0.050",
+                         cex=cex1),
+               xlab=list(label
+                         ="Percentual de Conclusão do 2º grau", cex=cex))
+
+## Variando ndias
+pred3 <- expand.grid(crime=mean(da$crime),
+                     estud=mean(da$estud),
+                     ndias=0:188)
+aux3 <- predict(m0, newdata=pred3, interval="confidence")
+pred3 <- cbind(pred3, aux3)
+
+var3 <- xyplot(fit~ndias, pred3, type=c("l","g"),
+               ly=pred3$lwr, uy=pred3$upr,
+               col="blue",
+               prepanel=prepanel.ciH,
+               panel=panel.ciH,
+               ylab=list(label ="Expectativa de Vida", cex=cex),
+               main=list(label ="Variável ndias\nEstimativa -0.007",
+                         cex=cex1),
+               xlab=list(label ="Número de Dias Frios", cex=cex))
+
+grid.arrange(var1, var2, var3, ncol=3,
+             top="Relações Marginais do Modelo Proposto")
+
+@
+
+Na figura \ref{fig:pred1} podemos visualizar as relações mencionadas na
+seção 3.4, os gráficos foram construídos fixando as variáveis taxa de
+criminalidade e porcentagem de estudantes concluintes do segundo grau em
+suas respectivas médias e a variável número de dias no ano com
+temperatura abaixo de 0°C na cidade mais importante do estado em 115,
+que equivale ao valor arredondado de sua mediana. Para cada um dos
+gráficos variamos somente o valor do eixo $x$ e verificamos o valor
+predito pelo modelo no eixo $y$, também são apresentadas as bandas de
+confiança para a média com 95\% de confiança.
+
+A interpretação das relações (crescente ou decrescente) já foi
+mencionada, mas aqui complementaremos com a interpretação do parâmetros
+que também estão expostos nos gráficos da figura \ref{fig:pred1}. O
+valor estimado para $\beta_0$ não está no gráfico mas equivale a 71.036
+e é interpretado como o valor estimado para a expectativa de vida quando
+as outras variáveis são fixadas em 0, mas na prática não podemos
+realizar esta predição, pois a predição não pode extrapolar o intervalo
+de valores utilizado para a modelagem e conforme pode ser visto na
+tabela 2 somente a variável número de dias no ano com temperatura abaixo
+de 0°C na cidade mais importante do estado tem o valor 0 presente. Para
+o valor de $\beta_1$ podemos interpretá-lo como o valor médio estimado
+de decréscimo da variável resposta a cada uma unidade acrescida na taxa
+de criminalidade quando fixado as outras variáveis
+explicativas. Analogamente a interpretação de $\beta_1$, para $\beta_2$
+e $\beta_3$ temos a mesma interpretação, porém alterando os valores:
+estima-se pelo modelo proposto que para uma unidade acrescida na
+porcentagem de alunos concluintes do segundo grau em média teremos um
+aumento de 0.05 na expectativa de vida do estado, mantendo fixados os
+valores da taxa de criminalidade e do número de dias com temperatura
+abaixo de 0°C e para uma unidade a mais no número de dias com
+temperatura abaixo de 0°C espera-se em média um decréscimo de 0.007 na
+expectativa de vida nas mesmas condições.
+
+\section{Conclusões}
+Pelo estudo foi possível constatar as relações que inicialmente
+desejávamos. Porém os pequenos valores das estimativas não são tão
+expressivos ao olhar somente a estimativa isolada, mas considerando
+também as medidas de dispersão percebe-se que as relações estão bem
+caracterizadas. Como já esperado a expectativa de vida nos estados
+norte-americanos decresce com relação a taxa de criminalidade e número
+de dias com temperatura abaixo de 0ºC na cidade mais importante do
+estado e apresenta um crescimento com relação ao percentual de
+estudantes que concluem o segundo grau já com relação as outras
+variáveis renda per capita, proporção de analfabetos e densidade
+demográfica não foi possível identificar uma relação expressiva com a
+expectativa de vida.  Um ponto que pode ser questionável está na
+obtenção dos dados, temos dados provenientes de períodos bem distintos o
+que pode acarretar em interpretações não válidas na realidade.
+
+\end{document}

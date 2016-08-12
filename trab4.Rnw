@@ -1,0 +1,687 @@
+\documentclass[a4paper]{article} %% Classe do documento
+\usepackage[margin=2cm]{geometry} %% Dimens?es das margens
+\usepackage[brazil]{babel} %% Idioma
+\usepackage[utf8x]{inputenc} %% Codifica??o de caracteres
+\usepackage{amsmath} %% S?mbolos/express?es/ambientes matem?ticos
+\usepackage{graphicx} %% Inserir figuras em qualquer extens?o
+\usepackage[svgnames]{xcolor} %% Usar cores pelo nome
+\usepackage{float}
+\usepackage{multicol}
+\usepackage{indentfirst}
+\usepackage{array}    % Uma implementação melhor do tabular
+\usepackage{booktabs} % Linhas horizontais para tabelas
+\usepackage{multirow} % Permite uma célula de várias linha
+\usepackage{vwcol}
+
+\newcommand{\undertilde}[1]{\underset{\widetilde{}}{#1}}
+
+\begin{document}
+\begin{titlepage}
+
+  \center{\rule{15cm}{2pt}}
+  \begin{center}{\bf Universidade Federal do Paraná\\
+      Setor de Ciências Exatas\\
+      Departamento de Estatística\\[7.5cm]
+
+      {\Large INCIDÊNCIA DE DENGUE EM UMA CIDADE DA COSTA
+        MEXICANA:\\[0.32cm] UM ESTUDO PREDITIVO}\\[4.5cm]
+
+      {\large CE225 - Modelos Lineares Generalizados\\[0.2cm]
+        Eduardo Elias Ribeiro Junior}
+      % \end{minipage}
+      \vfill
+      Curitiba, 19 de novembro de 2014
+      \center{\rule{15cm}{2pt}}}
+  \end{center}
+\end{titlepage}
+
+\tableofcontents
+
+\pagebreak
+
+<<setup, include=FALSE, cache=FALSE, message=FALSE, warning=FALSE>>=
+
+library(knitr)
+library(xtable)
+opts_chunk$set(tidy=FALSE,
+               size="small",
+               cache=TRUE,
+               echo=FALSE,
+               fig.align="center",
+               fig.width=10,
+               fig.height=6,
+               fig.pos="H")
+
+library(ROCR)
+source("misc-fun.R")
+
+da <- read.table("./data/dengue.dat",
+                 colClasses=c("integer", "factor", "factor", "factor"))
+names(da) <- c("idade","nivel","setor","caso")
+da0 <- subset(da, caso == 0); col0 <- rgb(0, 0, 1, 1/3)
+da1 <- subset(da, caso == 1); col1 <- rgb(1, 0, 0, 1/3)
+cex <- 0.95
+
+@
+
+\section{Introdução}
+Para investigar a incidência de dengue numa determinada cidade da costa
+mexicana foram coletadas características de 196 indivíduos, escolhidos
+aleatoriamente em dois setores da cidade. As características coletadas
+foram \textsl{idade}, idade do entrevistado, \textsl{nível}, nível
+sócio-econômico (nivel=1, nível alto; nivel=2, nível médio; nivel=3,
+nível baixo), \textsl{setor}, setor da cidade onde mora o entrevistado
+(setor=1, setor 1; setor=2, setor 2) e \textsl{caso}, se o entrevistado
+contraiu (caso=1) ou não (caso=0) a doença recentemente.
+
+O principal objetivo do estudo é tentar prever ou explicar a
+probabilidade de um indivíduo contrair a doença (variável
+\textsl{caso}=1) dadas as variáveis explicativas \textsl{idade},
+\textsl{nível} e \textsl{setor}, porém relação de influência destas
+variáveis explicativas na variável resposta \textsl{caso} também serão
+estudadas.
+
+\section{Materiais e Métodos}
+Relações onde uma variável, ou um conjunto de variáveis, são utilizadas
+para explicar outra podem ser analisados, em estatística, com o auxílio
+da teoria de modelos de regressão. Neste caso, dada a natureza binária
+da variável resposta \textsl{caso} (0 ou 1), serão utilizados os
+conceitos de modelos lineares generalizados, propostos em 1972 por
+Nelder e Wedderburn.
+
+Em regressão para dados binários a distribuição Binomial é a principal
+alternativa como componente aleatório do modelo, o componente sistemário
+é dado pela combinação linear das variáveis explicativas e para função
+de ligação trabalharemos com as funções: \texttt{logit},
+\texttt{probit}, \texttt{complemento log-log} e \texttt{cauchit}. A
+definição do modelo teórico com a características citadas é descrito
+abaixo:
+
+\begin{align*}
+  Y_i \sim Binomial& (1, \pi_i)\\
+  g(\pi_i) = \beta_{0} + \beta_{1}&x_{1i} + \beta_{2}x_{2i} + \dots +
+  \beta_{p}x_{pi}
+\end{align*}
+
+Sendo $Y$ a variável resposta, $x_{1i}, x_{2i}, \dots, x_{ni}$ as
+i-ésimas realizações das respectivas variáveis explicativas $X_1, X_2,
+\dots, X_n$ e $g(\pi_i)$ a função de ligação, que assume as expressões
+conforme tabela 1. Perceba que particularizamos a distribuição para o
+atual problema fixando o primeiro parâmetro da distribuição Binomial em
+1 (resultando em uma Bernoulli). Este foi fixado em um, pois devido a
+variável \textsl{idade} ter sido coletada em anos não houve indivíduos
+com o mesmo conjunto de covariáveis.
+
+\begin{table}[H]
+  \centering
+  \caption{Funções de Ligação}
+  \begin{tabular}{l|cccc}
+    \hline
+    \textbf{Ligação}  & Logit & Probit & Complemento log-log & Cauchit\\
+
+    $\mathbf{g(\pi)}$ &   $ln\left ( \frac{\pi}{1-\pi} \right )$ &   $P^{-1}(Z^{\footnotemark[1]} \leq \pi)$ & $ln[-ln(1-\pi)]$ &  $P^{-1}(C^{\footnotemark[2]} \leq \pi)$\\
+    \hline
+  \end{tabular}
+  \\ {\scriptsize \footnotemark[1]{$Z \sim N(0, 1)$}}\hspace{0.2cm}{\scriptsize \footnotemark[2]{$C \sim Cauchy(0, 1)$ }}
+\end{table}
+
+Com as funções de ligação listadas acima temos opções para testar
+diferentes modelos e compará-los, o que será discutido posteriormente.
+
+\section{Modelagem Estatística}
+
+Nesta seção serão abordados os tópicos para modelagem de dados
+binários. Exploração dos dados, seleção de variáveis, especificação da
+função de ligação, definição do modelo e análise de diagnóstico serão
+temas apresentados e discutidos a seguir.
+
+\subsection{Análise Descritiva e Explorátória}
+
+Para observar o comportamento e particularidades das variáveis em
+estudo, nesta seção, serão discutidos alguns gráficos descritivos das
+variáveis coletadas no estudo. Como primeira visualização são exibidos,
+na figura 1, gráficos univariados de: \textsl{caso}, \textsl{idade},
+\textsl{nível} e \textsl{setor}.
+
+<<graf1, fig.cap="Variáveis Coletadas no Estudo", fig.height=5>>=
+
+##------------------------------------------------------------------------
+## Para todas as variaveis sem separação
+par(mfrow=c(1,4))
+## Caso
+tb <- table(da$caso)
+names(tb) <- c("Não Contraiu", "Contraiu")
+bp <- barplot(tb, beside = T, las = 1, xlab = 'Contração da doença',
+              ylab = 'Frequência', , ylim = c(0, 145), main="Caso")
+text(x = c(bp), y = c(tb), labels = tb, pos = 3)
+title(sub="(a)")
+## Idade
+h <- hist(da$idade, col = "gray", prob = TRUE, main = "Idade",
+          ylab = "Densidade", xlab = "Idade", ylim=c(0, 0.026))
+with(h, text(x = mids, y = density, labels = counts, pos=3))
+title(sub="(b)")
+## Nivel
+tb <- table(da$nivel)
+names(tb) <- c("Nível 1", "Nível 2", "Nível 3")
+bp <- barplot(tb, beside=T, las=1, xlab="Tipo de Nível",
+              ylab='Frequência', ylim=c(0, 83), main="Nível")
+text(x=c(bp), y=c(tb), labels=tb, pos=3)
+title(sub="(c)")
+## Setor
+tb <- table(da$setor)
+names(tb) <- c("Setor 1", "Setor 2")
+bp <- barplot(tb, beside=T, las=1, xlab="Tipo de Setor",
+              ylab='Frequência', ylim=c(0, 125), main="Setor")
+text(x=c(bp), y=c(tb), labels=tb, pos=3)
+title(sub="(d)")
+
+@
+
+
+Na figura 1 (a) temos o gráfico de frequência para contração de dengue,
+note que tivemos um desbalanceamento acentuado, com a frequença dos
+indivíduos que não contraíram a doença quase duas vezes e meia maior do
+que os que contraíram. Para a figura 1 (b) temos o histograma das idades
+dos indivíduos estudados com forte assimetria a direita, estando
+aproximadamente 75\% das observações abaixo de 35 anos de idade. Para os
+dois últimos gráficos, figura 1 (c) e figura 1 (d), temos exibidas as
+frequências observadas das categorias de cada variável. Em (c) as
+categorias, nível 1, 2 e 3, são referente ao nível sócio-econômico do
+indivíduo e em (d) as categorias, setor 1 e 2, referenciam o setor onde
+o entrevistado reside. Nesses gráficos o desbalanceamento entre as
+frequências nas categorias não é tão intenso quanto o observado na
+figura 1 (a), mas também é presente.
+
+Retomando o objetivo inicial, onde se deseja verificar a influência das
+variáveis explicativas \textsl{idade}, \textsl{nível} e \textsl{setor}
+na contração de dengue, é apresentado na figura 2 um conjunto de
+gráficos uni e bivariados estratificados pela contração ou não da
+doença.
+
+<<graf2, fig.cap="Covariáveis Estratificadas por Contração ou Não de Dengue", fig.height=11, fig.width=12, out.width="0.8\\textwidth">>=
+
+## Para todas as variaveis idependentes estratificadas
+
+## Layout do grafico
+m <- matrix(c(1, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+            nrow = 4, ncol = 3, byrow = TRUE)
+layout(mat = m, heights = c(0.2, 0.5, 0.5, 0.5))
+
+## Legenda
+par(mar = c(1,1,1,1))
+plot(1, type = "n", axes=FALSE, xlab="", ylab="")
+legend(x = "bottom", inset=0, title="Variável Caso",
+       legend = c("Contraiu (1)","Não Contraiu (0)"),
+       fill = c(col1, col0), cex=1.4, bty="n", horiz = TRUE)
+par(mar = c(3,3,2,2))
+
+## Idade
+hist(da0$idade, prob = TRUE, breaks = seq(0, 90, by=10),
+     col = col0, axes = FALSE, xlab = "Idade", main = "",
+     ylab = "Densidade")
+hist(da1$idade, prob = TRUE, breaks = seq(0, 90, by=10),
+     add = T, col = col1)
+axis(2, at = seq(0, 0.03, len=5), pos = -3.5)
+axis(1, at = seq(0, 90, by = 10), pos = NA)
+mtext("Idade")
+
+## idade x setor
+plot(idade ~ jitter(as.numeric(setor), 0.5), data=da, type="n",
+     main="", xlab="", ylab="")
+points(idade ~ jitter(as.numeric(setor), 0.5), data=da0, col=col0,
+       pch=19)
+points(idade ~ jitter(as.numeric(setor), 0.5), data=da1, col=col1,
+       pch=19)
+
+## idade x nivel
+plot(idade ~ jitter(as.numeric(nivel), 0.5), data=da, type="n",
+     main="", xlab="", ylab="")
+points(idade ~ jitter(as.numeric(nivel), 0.5), data=da0, col=col0,
+       pch=19)
+points(idade ~ jitter(as.numeric(nivel), 0.5), data=da1, col=col1,
+       pch=19)
+
+## setor x idade
+plot(jitter(as.numeric(setor), 0.5) ~ idade, data=da, type="n",
+     main="", xlab="", ylab="")
+points(jitter(as.numeric(setor), 0.5) ~ idade, data=da0, col=col0,
+       pch=19)
+points(jitter(as.numeric(setor), 0.5) ~ idade, data=da1, col=col1,
+       pch=19)
+
+## Setor
+tb <- with(da, table(caso, setor))
+dimnames(tb)$setor <- c("Setor 1", "Setor 2")
+bp <- barplot(tb, beside=T, las=1, xlab="Tipo de Setor",
+              ylab='Frequência', ylim=c(0, 105),
+              col=c(col0, col1))
+text(x=c(bp), y=c(tb), labels=tb, pos=3)
+mtext("Setor")
+
+## setor x nivel
+plot(jitter(as.numeric(setor), 0.5) ~ jitter(as.numeric(nivel), 0.5),
+     data=da, type="n", main="", xlab="", ylab="")
+points(jitter(as.numeric(setor), 0.5) ~ jitter(as.numeric(nivel), 0.5),
+       data=da0, col=col0, pch=19)
+points(jitter(as.numeric(setor), 0.5) ~ jitter(as.numeric(nivel), 0.5),
+       data=da1, col=col1, pch=19)
+
+## nivel x idade
+plot(jitter(as.numeric(nivel), 0.5) ~ idade, data=da, type="n",
+     main="", xlab="", ylab="")
+points(jitter(as.numeric(nivel), 0.5) ~ idade, data=da0, col=col0,
+       pch=19)
+points(jitter(as.numeric(nivel), 0.5) ~ idade, data=da1, col=col1,
+       pch=19)
+
+## nivel x setor
+plot(jitter(as.numeric(nivel), 0.5) ~ jitter(as.numeric(setor), 0.5),
+     data=da, type="n", main="", xlab="", ylab="")
+points(jitter(as.numeric(nivel), 0.5) ~ jitter(as.numeric(setor), 0.5),
+       data=da0, col=col0, pch=19)
+points(jitter(as.numeric(nivel), 0.5) ~ jitter(as.numeric(setor), 0.5),
+       data=da1, col=col1, pch=19)
+
+## Nivel
+tb <- with(da, table(caso, nivel))
+dimnames(tb)$nivel <- c("Nível 1", "Nível 2", "Nível 3")
+bp <- barplot(tb, beside=T, las=1, xlab="Tipo de Nível",
+              ylab='Frequência', ylim=c(0, 58),
+              col=c(col0, col1),  xlim=c(1, 9))
+text(x=c(bp), y=c(tb), labels=tb, pos=3)
+mtext("Nível")
+
+@
+
+Perceba na figura 2 que os gráficos são dispostos em uma matriz de 3
+linhas e 3 colunas resultando em 9 gráficos.Os gráficos abaixo da
+diagonal principal são gráficos bivariados idênticos aos gráficos acima
+dela, invertendo somente seus eixos. Primeiramente, observando os
+gráficos univariados da diagonal principal estratificados por
+\textsl{caso}, notamos que o histograma das idades dos indivíduos assume
+formas distintas dentre os estratos, indicando que esta variável pode
+ser significativa para explicar a contração de dengue nestes
+indivíduos. Para o gráfico de frequências do setor onde reside o
+indivíduo é observado que a disposição das frequências dos indivíduos
+que contraíram e não contraíram a doença é distinta dentro dos setores 1
+e 2, também indicando que esta variável pode auxiliar na explicação da
+contração da doença. Já para o nível socio-econômico dos indivíduos a
+diposição das frequências nos estratos \textsl{caso = 1} e \textsl{caso
+  = 0} não parece se distinguir tão evidentemente. Para os gráficos
+bivariados nenhum padrão sistemático pode ser observado claramente, ou
+seja, os pontos indicando indivíduos que contraíram ou não a doença
+parecem se dispor aleatoriamente dentre as combinações das variáveis.
+
+\subsection{Seleção de Variáveis}
+
+Após o conhecimento adquirido na seção de descrição e exploração dos
+dados partiremos para seleção de variáveis que será realizado pelo
+algoritmo \textit{stepwise} considerando como critério de seleção o AIC
+(Critério de Informação de Akaike)\footnote{Teoria disponível em
+  http://www.yaroslavvb.com/papers/bozdogan-akaike.pdf}.
+
+O algoritmo \textit{step} com critério AIC parte de um modelo
+especificado e realiza sucessivas atualizações na inclusão ou exclusão
+de variáveis pertencentes aov modelo até que se atinja o menor AIC
+possível. Nesse estudo executamos o algoritmo em modelos com as quatro
+funções de ligação descritas na tabela 1 e em suas três direções:
+\textit{forward} (passo a frente, iniciando com um modelo nulo e
+inserindo variáveis, uma a uma, até que se encontre o menor AIC tendo
+como limete um modelo completo especificado), \textit{backward} (passo a
+trás, retira variáveis do modelo iniciando com um modelo completo
+especificado até que se resulte o menor AIC) e \textit{both} ou
+\textit{stepwise} (passo a passo, iniciando com um modelo completo,
+retira e insere variáveis sucessivamente até resultar em um modelo com o
+menor AIC). Consideramos como modelo completo o modelo aditivo com todos
+os efeitos principais, todas as interações duplas e mais a interação
+tripla somando ao todo 12 parâmetros. O algoritmo em suas diferentes
+direções e com diferentes funções de ligação resultaram no mesmo
+conjunto de variáveis, são elas: idade do indivíduo e o setor onde
+reside. O resultado do algoritmo é coerente com os gráficos apresentados
+na figura 2, pois as variáveis que mais se diferem dentre as categorias
+de contração da doença são a \textsl{idade} e \textsl{setor}. Portanto,
+no decorrer do estudo seguiremos nossas análise com o modelo definido
+abaixo.
+
+\begin{equation*}
+  \begin{gathered}
+    Caso_i \sim Binomial (1, \widehat{\pi_i})\\
+    g(\widehat{\pi_i}) = \widehat{\beta_{0}} +
+    \widehat{\beta_{1}}idade_{i} + \widehat{\beta_{2}}setor_{i}
+  \end{gathered}
+\end{equation*}
+
+Sendo a \textsl{idade}: a idade do individuo em anos e \textsl{setor}:
+uma variável indicadora assumindo 1 quando o setor onde o indivíduo
+reside é igua a 2 e 0 caso contrário.
+
+\subsection{Especificação da Função de Ligação}
+Com o componente aleatório e sistemático do modelo já definidos conforme
+discussões anteriores, faremos a escolha da função de ligação nesta
+subseção. Dentre as funções de ligação definidas na tabela 1, faremos um
+comparativo conforme medidas descritas na tabela 2 e gráficos
+apresentados na figura 3.
+
+\begin{table}[H]
+  \centering
+  \caption{Comparação dos Modelos com Diferentes \textit{Links}}
+  \begin{tabular}{lccccc}
+    \hline
+    Ligação& $gl_s$ & AIC & Deviance & Area ROC & Pseudo $R^2$ \\
+    \hline
+    Logit & 3 & 217.6393 & 211.6393 & 0.7254 & 0.1045 \\
+    Probit & 3 & 217.3400 & 211.3400 & 0.7253 & 0.1057 \\
+    Comp. log-log & 3 & 218.1105 & 212.1105 & 0.7266 & 0.1025 \\
+    Cauchit & 3 & 218.7541 & 212.7541 & 0.7274 & 0.0998 \\
+    \hline
+  \end{tabular}
+\end{table}
+
+<<comp, fig.cap="Qanti-Quantil com Envelope Simulado - Comparação de Links", fig.height=4, fig.width=12, out.width="0.9\\textwidth">>=
+
+model.log <- glm(formula = caso ~ idade + setor,
+family = binomial(link = "logit"), data = da)
+
+model.prob <- glm(formula = caso ~ idade + setor,
+family = binomial(link = "probit"), data = da)
+
+model.clog <- glm(formula = caso ~ idade + setor,
+family = binomial(link = "cloglog"), data = da)
+
+model.cauc <- glm(formula = caso ~ idade + setor,
+family = binomial(link = "cauchit"), data = da)
+
+par(mfrow=c(1,4))
+envelope(model.log)
+title("Ligação Logit")
+envelope(model.prob)
+title("Ligação Probit")
+envelope(model.clog)
+title("Ligação Complemento Log-Log")
+envelope(model.cauc)
+title("Ligação Cauchit")
+
+@
+
+Perceba que os modelos especificados com diferentes funções de ligação
+apresentaram um comportamento muito parecido. Com base nos gráficos
+apresentados na figura 3, não há problemas quanto a especificação do
+modelo nas quatro diferentes funções de ligação propostas, todos os
+gráficos apresentaram resíduos dentro dos intervalos simulados. Já com
+base nas medidas de comparação exibidas na tabela 2, nota-se um tímido
+melhor desempenho das ligações \texttt{logit} e \texttt{probit} em
+relação a \texttt{complemento log-log} e \texttt{cauchit}. A
+\texttt{logit} apresentou um desempenho um pouco abaixo da ligação
+\texttt{probit}, porém, em função da magnitude das medidas comparativas
+e pela vantagem interpretativa da especificação \texttt{logit}, dada em
+função de razão de chances, esta foi definida no modelo proposto.
+
+\subsection{Modelo Proposto}
+Com os elementos: distribuição Binomial, preditor linear com efeitos
+principais aditivos de \textsl{idade} e \textsl{setor} e função de
+ligação logito vamos escrever o modelo resultante das análises até aqui:
+
+\begin{align}
+  Caso_i &\sim Binomial (1, \widehat{\pi_i})\\
+  g(\widehat{\pi_i}) &= ln(\frac{\widehat{\pi_i}}{ 1 - \widehat{\pi_i} }) = \widehat{\beta_{0}} + \widehat{\beta_{1}}idade_{i} + \widehat{\beta_{2}}setor_{i}
+\end{align}
+
+A tabela 3 complementa complementa e equação (2) com os valores
+estimados dos parâmetros e seus respectivos erros padrão:
+
+\begin{table}[H]
+  \centering
+  \caption{Resumo das Estimativas para o Modelo Ajustado}
+  \begin{tabular}{cccccc}
+    \hline
+    Efeito & Parâmetro & Estimativa & E. Erro Padrão & Estatística Z & Pr($>|z|$) \\
+    \hline
+    Constante & $\beta_0$ & -2.1597 & 0.3439 & -6.28 & 0.0000 \\
+    Idade & $\beta_1$ & 0.0268 & 0.0086 & 3.10 & 0.0019 \\
+    Setor & $\beta_2$ & 1.1817 & 0.3370 & 3.51 & 0.0005 \\
+    \hline
+  \end{tabular}
+\end{table}
+
+Note nesta tabela 3 que marginalmente (considerando a distribuição Z -
+Normal(0,1)) todos os efeitos são bastante significativos. A
+interpretação das estimativas dos parâmetros será discutida
+posteriormente, pois esta se dará em função da razão de chances conforme
+já mencionado na seção 3.3.
+
+\begin{table}[H]
+  \caption{Análise de Diferenças de \textit{Deviances}}
+  \centering
+  \begin{tabular}{lccccc}
+    \toprule
+    & & & Diferença de & Diferença & \\
+    Modelos & \textit{$gl_s$} & \textit{Deviances} & \textit{Deviances} & de \textit{$gl_s$} &  Valor \textit{p}\\
+    \midrule
+    Nulo & 195 & 236.33 &  &  &  \\
+    \textsl{Idade} & 194 & 224.32 & 12.0130 & 1 & 0.0005283 \\
+    \textsl{Setor} $|$ \textsl{Idade} & 193 & 211.64 & 12.6771 & 1 & 0.0003702 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Na tabela 4 é apresentada a análise de deviances sequenciais, onde são
+testados os efeitos das variáveis \textsl{idade} e
+\textsl{setor}. Primeiramente temos a hipótese de não significância do
+efeito da variável \textsl{idade} expressa por $H_0: \beta_1 = 0$ onde,
+pelo teste de razão de verossimilhanças (TRV), obteve-se $p-valor
+\approx 0.00053$ evidenciando a significância estatística deste
+efeito. Da mesma forma, para a não significância do efeito da variável
+\textsl{setor} na presença da variável \textsl{idade}, $H_0: \beta_2 =
+0$, obteve-se $p-valor \approx 0.0004$. Deste modo, há também evidências
+de efeito significativo da variável \textsl{setor} na preseça da
+variável \textsl{idade}. Com isso validamos a seleção de variáveis
+realizada na seção 3.2.
+
+\subsection{Análise de Diagnóstico}
+Com o principal objetivo de subsidiar a avaliação da qualidade do
+modelo, a análise de diagnóstico verificará a adequação da distribuição
+proposta, da função de ligação, do preditor linear, enfim do modelo de
+regressão ajustado aos dados.
+
+Com relação a especificação das covariáveis no modelo podemos observar
+na figura 4 que não há grandes evidências de má especificação das
+covariáveis no modelo, mesmo sendo observada a assimetria dos
+resíduos. Note que a interpretação dos gráficos de diagnóstico é mais
+flexível nestes casos, pois a limitação da variável resposta (suporte 0
+ou 1) interfere na interpretação gráfica.
+
+<<resPlot, fig.cap="Resíduos vs. Covariáveis e Preditor Linear", fig.height=4, fig.width=10, out.width="0.9\\textwidth">>=
+
+model <- glm(formula = caso ~ idade + setor,
+             family = binomial(link = "logit"), data = da)
+
+## Preditor Linear
+a <- car::residualPlots(model, layout=c(1,3))
+
+@
+
+Para a figura 5 são apresentados outros 3 gráficos que auxiliam na
+identificação de possíveis fuga de suposições do modelo. No caso
+apresentado, não temos evidências gráficas para suspeitar de nenhuma
+suposição não atendida. No gráfico (a) a magnitude dos resíduos não
+ultrapassa 2 e temos, apenas, uma leve frequência maior de resíduos
+abaixo de zero. No segundo gráfico (b) representando o resíduo
+vs. valores ajustados, temos uma disposição aparentemente centrada em
+zero, novamente lembramos que a natureza da variável resposta dificulta
+a interpretação. No terceiro e último gráfico deste figura, (c), temos o
+gráfico quantil-quantil com envelope simulado, onde resíduos dispostos
+dentro das bandas de confiança representam adequação dos dados ao modelo
+proposto.
+
+<<plotdiag, fig.cap="Resíduos vs. Covariáveis e Preditor Linear", fig.height=4, fig.width=10, out.width="0.9\\textwidth">>=
+
+## Pressuposições
+diag.binom(model)
+
+@
+
+Atendidos os pressupostos de adequação do modelo proposto com
+distribuição, especificação das covariáveis no preditor linear e função
+de ligação bem ajustadas, verificaremos possíveis obervações influentes
+a partit da figura 6.
+
+<<plotinfl, fig.cap="Medidas de Influência", fig.height=5, fig.width=11.5, out.width="0.9\\textwidth">>=
+
+## Observações Influentes
+hatv <- ((influence.measures(model)$infmat[,7]))
+dicook <- ((influence.measures(model)$infmat[,6]))
+ni=10
+
+par(mfrow=c(1,2))
+plot(hatv, ylab="Alavancagem", type="n", ylim=c(0, 0.075))
+abline(h=seq(0.01, 0.07, by=0.01), v=seq(0, 200, by=50),
+       col="gray60", lty=2)
+lines(x=1:nrow(da), y=hatv, type="h", ylab="Alavancagem")
+points(x=1:nrow(da), y=hatv, pch=20)
+text(x = 195 - ni, hatv[195], "195", cex=0.95)
+title(sub="(a)")
+
+plot(dicook, ylab="Dist. de Cook", type="n")
+abline(h=seq(0.01, 0.05, by=0.01), v=seq(0, 200, by=50),
+       col="gray60", lty=2)
+lines(x=1:nrow(da), y=dicook, type="h")
+points(x=1:nrow(da), y=dicook, pch=20)
+text(x = 157 - ni, dicook[157], "157", cex=0.95)
+text(x = 195 - ni, dicook[195], "195", cex=0.95)
+title(sub="(b)")
+
+@
+
+Nos gráficos da figura 6 são apresentadas duas medidas de influência:
+valores de alavancagem $h$ em (a) e distâncias de cook em (b). Ambos
+indicam que valores com grandes magnitudes, em relação aos demais, podem
+se apresentar como observações influentes. Nos dois gráficos destamos 2
+observações (\#157 e \#195) que apresentaram valores muito diferentes
+dos demais. A observação \#157 refere-se a um indivíduo com 79 anos,
+residente do setor 2 da cidade e que não contraiu a doença recentemente,
+perceba que para este perfil, segundo o modelo, teríamos uma maior
+probabilidade de contração da doença (estimada em aproximadamente
+0.76). Da mesma forma para o perfil \#195: 85 anos, residente do setor 1
+da cidade e não apresentando contração da doença recentemente, o modelo
+estima uma probabilidade de aproximadamente 0.53 de contrair a
+doença. Foram ajustados modelos sem as variáveis identificadas, porém as
+estimativas e componentes do modelo não apresentaram diferenças
+significativas. As observações continuaram presentes na análise.
+
+Com isso, pelas análises de diagnóstico realizadas anteriormente podemos
+utilizar o modelo proposto para inferência e interpretações.
+
+\section{Resultados}
+
+Com o modelo especificado e avaliado podemos realizar predições e
+interpretações. A figura 7 exibe os gráficos provenientes do modelo
+descrito nas expressões (1) e (2) da seção 3.4.
+
+<<plotpred, fig.cap="Prediçaõ do Modelo Ajustado", fig.height=5.5, fig.width=11, out.width="0.9\\textwidth">>=
+
+m <- matrix(c(1, 1, 1, 2, 3, 4),
+            nrow = 2, ncol = 3, byrow = TRUE)
+layout(mat = m, heights = c(0.1, 0.6))
+
+## Legenda
+par(mar = c(1,1,1,1))
+plot(1, type = "n", axes=FALSE, xlab="", ylab="")
+legend("center", legend = c("Setor 1","Setor 2"), lwd=2, horiz=TRUE,
+       col = c("darkblue", "darkgreen"), cex=1.4, bty="n", lty = 1)
+par(mar = c(5,4,0,2))
+
+## Escala Probabilidade
+pred <- expand.grid(idade = min(da$idade):max(da$idade),
+                    setor = factor(c(1, 2)))
+aux <- predict(model, newdata = pred, type="response")
+pred <- cbind(pred, aux)
+pred1 <- subset(pred, setor == 1); col1="darkblue"
+pred2 <- subset(pred, setor == 2); col2="darkgreen"
+
+plot(aux ~ idade, data=pred, type="n", ylab="Pr(caso = 1)")
+abline(h = seq(0, 0.8, by=0.1),
+       v = seq(0, 80, by=10),
+       col="gray80", lty=2)
+lines(aux ~ idade, data = pred1, col=col1, lwd=2)
+lines(aux ~ idade, data = pred2, col=col2, lwd=2)
+title(sub="(a)")
+
+## Escala Logito
+pred <- expand.grid(idade = min(da$idade):max(da$idade),
+                    setor = factor(c(1, 2)))
+aux <- predict(model, newdata = pred, type="link")
+pred <- cbind(pred, aux)
+pred1 <- subset(pred, setor == 1); col1="darkblue"
+pred2 <- subset(pred, setor == 2); col2="darkgreen"
+
+plot(aux ~ idade, data=pred, type="n", ylab="Logito")
+abline(h = seq(-2, 1, by=0.5),
+       v = seq(0, 80, by=10),
+       col="gray80", lty=2)
+lines(aux ~ idade, data = pred1, col=col1, lwd=2)
+lines(aux ~ idade, data = pred2, col=col2, lwd=2)
+title(sub="(b)")
+
+## Escala Chances
+pred <- expand.grid(idade = min(da$idade):max(da$idade),
+                    setor = factor(c(1, 2)))
+aux <- exp(predict(model, newdata = pred, type="link"))
+pred <- cbind(pred, aux)
+pred1 <- subset(pred, setor == 1); col1="darkblue"
+pred2 <- subset(pred, setor == 2); col2="darkgreen"
+
+plot(aux ~ idade, data=pred, type="n", ylab="Chances")
+abline(h = seq(0, 3.5, by=0.5),
+       v = seq(0, 80, by=10),
+       col="gray80", lty=2)
+lines(aux ~ idade, data = pred1, col=col1, lwd=2)
+lines(aux ~ idade, data = pred2, col=col2, lwd=2)
+title(sub="(c)")
+
+@
+
+Note que na figura 7 são exibidos três gráficos de predição sob o mesmo
+modelo. Em modelos lineares generalizados temos mais que um gráfico de
+predição, especialmente neste caso temos dois deles, (a) e (c), que são
+de extrema importância para interpretações e inferências. Apresentando
+as diferenças e equivalências dos gráficos temos em (a) o gráfico que
+representa a predição na escala do parâmetro de interesse, a
+probabilidade de um indíviduo contrair a doença, com características de
+\textsl{idade} e \textsl{setor} descritas. Já para a figura 7 (b) é
+considerada a escala do logito ($ln(\frac{\hat{\pi}}{1-\hat{\pi}})$) e
+temos retas paralelas apresentadas, concordante com a especificação do
+preditor linear do modelo. Finalmente para o gráfico (c) temos a escala
+das chances apresentada no eixo $y$, ou seja, exponencial do logito que
+também é de fundamental interesse no estudo, observe que a chance de
+contração da doença é diretamente proporcional a idade do indivíduo e
+indivíduos residentes no setor 2 da cidade tem uma maior chance
+estimada.
+
+O modelo de regressão binomial com função de ligação logito tem como
+atrativo, a facilidade da obtençção das razões de chances devido a
+construção da função de ligação. Neste estudo uma estimativa para a
+razão de chances entre o setor 1 e setor 2, ajustada para idade do
+indivíduo, é dada por $exp\left \{1.1817\right \} \approx 3.26$, ou
+seja, estima-se que a chance de contração da doença em indivíduos
+residentes do setor 2 é aproximadamente 3.26 vezes a chance dos
+indivíduos residente do setor 1 (observe também o gráfico (c)). De modo
+análogo, a razão de chances entre indivíduos com 1 ano de diferença,
+ajustada pelo setor de residência do indivíduo, é estimada por $exp\left
+  \{0.2681\right \} \approx 1.31$, ou seja, estima-se que a chance de
+contração da doença em indivíduos com $x+1$ anos de idade é 1.31 vezes a
+chance dos indivíduos com $x$ anos.
+
+\section{Conclusões}
+Com base neste estudo foi possível constatar que o setor da cidade tem
+forte influência na propagação da dengue, ainda foi evidenciado que a
+idade do indivíduo também tem certa influência. Para o nível
+socio-ecônomico, variável também coletada no estudo, não foi possível
+verificar associação com a doença. Ainda para as variáveis
+significativas verificou-se que interações não foram significaticas, ou
+seja, o efeito de idade estratificado pelos diferentes setores não foi
+significativo. O setor 2 da cidade teve uma chance de contração de
+aproximadamente 3 vezes maior que o setor 1 da cidade. Para a idade do
+indivíduo também tivemos uma chance maior para indivíduos mais idosos,
+porém com menor intensidade.
+
+\end{document}

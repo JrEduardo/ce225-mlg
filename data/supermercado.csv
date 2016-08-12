@@ -1,0 +1,101 @@
+.	Forma de pagamento	Tipo de cliente	Distância	Npessoas	Gasto
+1	Vale Alimentação	Cliente cadastrado	0,3	1	0,349
+2	Vale Alimentação	Cliente não cadastrado	2,7	1	0,32
+3	Cartão de crédito	Cliente cadastrado	9,9	3	1,116
+4	Vale Alimentação	Cliente não cadastrado	3,2	1	0,69
+5	Vale Alimentação	Cliente não cadastrado	10	4	0,456
+6	Vale Alimentação	Cliente cadastrado	7,3	6	0,755
+7	Cartão de crédito	Cliente não cadastrado	3,3	9	1,618
+8	Dinheiro	Cliente não cadastrado	9	3	0,825
+9	Dinheiro	Cliente não cadastrado	0,3	3	0,086
+10	Cartão de crédito	Cliente não cadastrado	4	6	0,322
+11	Dinheiro	Cliente não cadastrado	9,7	1	0,147
+12	Vale Alimentação	Cliente não cadastrado	8,1	1	0,157
+13	Cartão de crédito	Cliente não cadastrado	6,4	3	0,473
+14	Cartão de crédito	Cliente não cadastrado	2,5	5	0,513
+15	Cartão de crédito	Cliente não cadastrado	0	2	0,126
+16	Dinheiro	Cliente não cadastrado	2,3	6	0,356
+17	Cartão de crédito	Cliente não cadastrado	0,2	1	0,182
+18	Cartão de crédito	Cliente não cadastrado	2	1	0,638
+19	Cartão de crédito	Cliente cadastrado	6,7	6	1,299
+20	Dinheiro	Cliente não cadastrado	1,4	3	0,39
+21	Vale Alimentação	Cliente não cadastrado	1,6	4	0,479
+22	Cartão de crédito	Cliente não cadastrado	2,5	2	0,123
+23	Cartão de crédito	Cliente não cadastrado	5,5	3	0,746
+24	Dinheiro	Cliente não cadastrado	6,6	1	0,15
+25	Dinheiro	Cliente cadastrado	7,2	6	0,591
+26	Cartão de crédito	Cliente não cadastrado	3,5	6	1,004
+27	Dinheiro	Cliente não cadastrado	2,7	5	0,3
+28	Vale Alimentação	Cliente não cadastrado	4,9	7	0,178
+29	Cartão de crédito	Cliente não cadastrado	9,6	3	0,312
+30	Dinheiro	Cliente cadastrado	5,4	2	0,565
+31	Vale Alimentação	Cliente não cadastrado	6,2	1	0,54
+32	Cartão de crédito	Cliente não cadastrado	4,3	5	0,452
+33	Cartão de crédito	Cliente cadastrado	7	1	0,167
+34	Cartão de crédito	Cliente não cadastrado	6,3	2	0,513
+35	Dinheiro	Cliente não cadastrado	3,7	5	0,256
+36	Cartão de crédito	Cliente não cadastrado	4,7	3	1,276
+37	Cartão de crédito	Cliente não cadastrado	3,2	3	0,232
+38	Vale Alimentação	Cliente não cadastrado	9	10	0,542
+39	Vale Alimentação	Cliente cadastrado	9,3	2	0,904
+40	Cartão de crédito	Cliente não cadastrado	9,6	1	0,584
+41	Cartão de crédito	Cliente não cadastrado	1,4	3	0,282
+42	Cartão de crédito	Cliente não cadastrado	0,3	1	0,222
+43	Cartão de crédito	Cliente não cadastrado	3,7	2	0,105
+44	Cartão de crédito	Cliente não cadastrado	7,8	3	0,739
+45	Dinheiro	Cliente cadastrado	5,1	6	0,154
+46	Dinheiro	Cliente cadastrado	3,4	2	0,142
+47	Dinheiro	Cliente não cadastrado	5,6	4	0,088
+48	Cartão de crédito	Cliente não cadastrado	1,8	2	0,215
+49	Cartão de crédito	Cliente não cadastrado	5,6	5	0,478
+50	Dinheiro	Cliente cadastrado	4,5	2	0,096
+51	Vale Alimentação	Cliente cadastrado	5,6	3	0,387
+52	Vale Alimentação	Cliente não cadastrado	1,5	1	0,063
+53	Cartão de crédito	Cliente não cadastrado	6,3	2	1,338
+54	Cartão de crédito	Cliente não cadastrado	3,3	1	0,276
+55	Cartão de crédito	Cliente não cadastrado	7,8	7	2,112
+56	Dinheiro	Cliente não cadastrado	7,7	7	0,208
+57	Cartão de crédito	Cliente não cadastrado	3,7	4	0,336
+58	Cartão de crédito	Cliente não cadastrado	7,4	3	0,344
+59	Cartão de crédito	Cliente não cadastrado	9,6	2	0,435
+60	Vale Alimentação	Cliente não cadastrado	5,4	2	1,022
+61	Vale Alimentação	Cliente não cadastrado	8,5	2	1,224
+62	Vale Alimentação	Cliente não cadastrado	3	1	0,233
+63	Cartão de crédito	Cliente cadastrado	3,2	2	0,654
+64	Cartão de crédito	Cliente não cadastrado	8,6	6	1,268
+65	Dinheiro	Cliente não cadastrado	7,5	2	0,101
+66	Vale Alimentação	Cliente não cadastrado	1	6	2,901
+67	Cartão de crédito	Cliente não cadastrado	5,2	2	0,379
+68	Cartão de crédito	Cliente não cadastrado	9,2	6	0,151
+69	Cartão de crédito	Cliente cadastrado	3,6	2	0,674
+70	Cartão de crédito	Cliente não cadastrado	7,9	6	1,542
+71	Dinheiro	Cliente cadastrado	4	1	0,219
+72	Cartão de crédito	Cliente não cadastrado	4,3	1	0,384
+73	Vale Alimentação	Cliente não cadastrado	7,3	3	0,486
+74	Cartão de crédito	Cliente não cadastrado	0,3	5	2,156
+75	Vale Alimentação	Cliente não cadastrado	6,9	4	0,538
+76	Dinheiro	Cliente não cadastrado	3,7	3	0,219
+77	Cartão de crédito	Cliente não cadastrado	4,7	3	0,401
+78	Dinheiro	Cliente não cadastrado	0,1	1	0,333
+79	Cartão de crédito	Cliente cadastrado	4,3	3	2,123
+80	Vale Alimentação	Cliente não cadastrado	7,7	3	0,278
+81	Cartão de crédito	Cliente não cadastrado	6,6	3	0,544
+82	Cartão de crédito	Cliente cadastrado	2,7	9	5,218
+83	Vale Alimentação	Cliente não cadastrado	6,9	4	0,602
+84	Cartão de crédito	Cliente não cadastrado	4,8	2	0,452
+85	Cartão de crédito	Cliente não cadastrado	8	3	0,836
+86	Cartão de crédito	Cliente não cadastrado	6,8	3	0,362
+87	Vale Alimentação	Cliente não cadastrado	6,5	8	0,527
+88	Dinheiro	Cliente não cadastrado	8,6	1	0,138
+89	Vale Alimentação	Cliente não cadastrado	6,5	6	0,243
+90	Cartão de crédito	Cliente cadastrado	5	6	0,58
+91	Dinheiro	Cliente cadastrado	4,7	3	0,309
+92	Dinheiro	Cliente não cadastrado	7,8	5	0,109
+93	Vale Alimentação	Cliente cadastrado	0,5	7	0,909
+94	Vale Alimentação	Cliente não cadastrado	4	3	0,228
+95	Cartão de crédito	Cliente não cadastrado	3,3	4	1,078
+96	Cartão de crédito	Cliente não cadastrado	2,2	1	0,277
+97	Cartão de crédito	Cliente cadastrado	3,1	2	0,099
+98	Vale Alimentação	Cliente não cadastrado	8,3	3	0,792
+99	Cartão de crédito	Cliente não cadastrado	3	1	0,51
+100	Vale Alimentação	Cliente não cadastrado	8,8	1	0,321

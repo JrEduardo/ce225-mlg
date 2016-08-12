@@ -1,0 +1,788 @@
+\documentclass[a4paper]{article} %% Classe do documento
+\usepackage[margin=2cm]{geometry} %% Dimens?es das margens
+\usepackage[brazil]{babel} %% Idioma
+\usepackage[utf8x]{inputenc} %% Codifica??o de caracteres
+\usepackage{amsmath} %% S?mbolos/express?es/ambientes matem?ticos
+\usepackage{graphicx} %% Inserir figuras em qualquer extens?o
+\usepackage[svgnames]{xcolor} %% Usar cores pelo nome
+\usepackage{float}
+\usepackage{multicol}
+\usepackage{indentfirst}
+\usepackage{array}    % Uma implementação melhor do tabular
+\usepackage{booktabs} % Linhas horizontais para tabelas
+\usepackage{multirow} % Permite uma célula de várias linha
+\usepackage{vwcol}
+
+\newcommand{\undertilde}[1]{\underset{\widetilde{}}{#1}}
+
+\begin{document}
+\begin{titlepage}
+
+  \center{\rule{15cm}{2pt}}
+  \begin{center}{\bf Universidade Federal do Paraná\\
+      Setor de Ciências Exatas\\
+      Departamento de Estatística\\[7.5cm]
+
+      {\Large EXPLORANDO OS MODELOS LINEARES GENERALIZADOS\\
+        APLICAÇÃO A DADOS DE UM PEQUENO SUPERMERCADO}\\[2cm]
+
+      {\large CE225 - Modelos Lineares Generalizados}\\[2cm]
+
+      {\large Eduardo Elias Ribeiro Junior}
+
+      % \end{minipage}
+      \vfill
+      Curitiba, 17 de novembro de 2014
+      \center{\rule{15cm}{2pt}}}
+  \end{center}
+\end{titlepage}
+
+\tableofcontents
+
+\pagebreak
+
+%% chunk de configuração do knitr para a sessão
+<<setup, include=FALSE, cache=FALSE, message=FALSE, warning=FALSE>>=
+
+library(knitr)
+library(xtable)
+opts_chunk$set(tidy=FALSE,
+               size="small",
+               cache=TRUE,
+               echo=FALSE,
+               fig.align="center",
+               fig.width=6,
+               fig.height=4,
+               fig.pos="H")
+options(digits=4)
+
+library(MASS)
+
+@
+
+\section{Introdução}
+Para aplicação dos conceitos apresentados durante a disciplina de
+Modelos Lineares Generalizados foi disponibilizado um conjunto de dados
+com 100 observações referentes ao gasto de clientes de um pequeno
+supermercado. Neste conjunto de dados foram coletadas as informações de
+\textit{forma de pagamento}, \textit{tipo de cliente}, \textit{Distância
+  até o supermercado}, \textit{Número de pessoas que moram com o
+  cliente} e \textit{Valor gasto na compra}, neste trabalho estas
+variáveis serão nomeadas como \textit{X1}, \textit{X2}, \textit{X3},
+\textit{X4} e \textit{Gasto} respectivamente. Abaixo temos detalhadas as
+variáveis:
+
+\begin{itemize}
+\item \textbf{X1}: Forma de pagamento da compra (Variável Categórica).\\
+  $x1$ - Dinheiro, Cartão de Crédito ou Vale Alimentação;
+\item \textbf{X2}: Tipo de cliente (Variável Categórica).\\
+  $x2$ -  Cliente cadastrado ou Cliente Não Cadastrado;
+\item \textbf{X3}: Distância entre a residência do cliente e o
+  supermercado (Variável numérica).\\
+  $x3 \in R_{+}$ em km.
+\item \textbf{X4}: Número de pessoas que moram com o cliente, incluindo
+  o próprio cliente (Variável numérica).\\
+  $x4 \in Z_{+}^{*} $.
+\item \textbf{Gasto}: Gasto do cliente em sua última compra (Variável
+  numérica).\\
+  $Gasto \in  R_{+}$ em centenas de reais.
+\end{itemize}
+
+Com esse conjunto de dados deseja explicar a variável \textit{Gasto} com
+base nas demais variáveis a partir de um modelo linear generalizado,
+cujo especificações estarão descritas nas próximas seções.
+
+\section{Modelagem}
+Nesta seção apresentaremos e discutiremos os principais tópicos para
+modelagem de dados considerando um modelo linear generalizado.
+
+Abaixo são exibidas as 10 primeiras observações contidas na base de
+dados, cujo total de observações é 100.
+
+<<dados, results='asis', echo=FALSE>>=
+
+da <- read.table("./data/supermercado.csv",
+                 dec = ",", sep = "\t",  header = TRUE)
+names(da) <- c(".", "X1", "X2", "X3", "X4", "Gasto")
+
+xt <- xtable(head(da[, -1], 10), align = "lllccc",
+             caption = "Estrutura da base de dados")
+print(xt, include.rownames = FALSE, table.placement = "H",
+      caption.placement = "top", )
+
+@
+
+\subsection{Análise Descritiva e Exploratória}
+Esta etapa, preliminar do processo de modelagem, é de extrema
+importância para que se especifique um bom modelo de acordo com as
+indicações a serem observadas.
+
+Primeiramente estudaremos o comportamento da variável resposta.
+
+<<histo, fig.cap="Histograma de Gasto", fig.pos="H", echo=FALSE>>=
+
+### a) Histograma da variavel Gasto
+hist(da$Gasto, border="blue", xlab="Gasto", ylab="Frequência", main="")
+
+@
+
+<<descGasto, results='asis'>>=
+
+medidas.res <- function(data){
+    resumo <- summary(data)
+    varian <- var(data)
+    desvio <- sd(data)
+    coefvar <- desvio/mean(data)
+    desc <- data.frame(
+        Medidas = c("Min.", "1st Qu.", "Mediana", "Média",
+                    "3rd Qu.", "Max.", "Variância", "Desvio Padrão",
+                    "Coeficiente de Variação"),
+        Valores = c(resumo, varian, desvio, coefvar))
+    return(tab=desc)
+}
+
+desc.gasto <- medidas.res(da$Gasto)
+print(xtable(desc.gasto, caption = "Medidas Descritivas para Gasto",
+             label = "descGasto", align = "llc"),
+      include.rownames=FALSE, table.placement="H",
+      caption.placement="top")
+
+@
+
+
+Perceba que tanto pela Figura 1 quanto pela Tabela 1 é evidente a
+assimetria a direita da distribuição da variável \textit{Gasto}, ficando
+mais de 80\% das observações entre 0 e 1 centenas de reais.
+
+Agora estudando a variável resposta em função das variáveis
+explicativas, como temos variáveis categóricas e numéricas serão
+apresentados gráficos de caixas (box-plots) para as variáveis
+categóricas e gráficos de dispersão (scatter-plots) para as variáveis
+numéricas.
+
+<<GastoX1, fig.cap="Box-plots de Gasto em relação a X1 e X2", fig.pos="H", fig.width=12>>=
+
+par(mfrow=c(1,2))
+boxplot(Gasto ~ X1, data=da, border="blue", pch=20,
+        main="Forma de pagamento")
+text(x=c(1.1, 3.1), y=c(5.219549, 2.903481), c(82, 66), cex=0.9)
+title(main="", sub="(a)")
+boxplot(Gasto ~ X2, data=da, border="blue", pch=20,
+        main="Tipo de cliente")
+text(x=c(1.07, 2.07), y=c(5.219549, 2.903481), c(82, 66), cex=0.9)
+title(main="", sub="(b)")
+
+@
+
+Oberve na Figura 2 (a) que o gasto de clientes que utilizam cartão de
+crédito como forma de pagamento é maior do que que as que utilizam
+dinheiro e tem seu comportamento bem parecido com o gasto dos clientes
+que utilizam vale alimentação, apresentando um gasto levemente superior
+com variabilidade maior em relação a esta categoria. Ainda pode-se notar
+que os clientes que optam pagar com dinheiro tendem a ter um gasto menor
+e ainda com menor variabilidade, estando todos os indíviduos, nesta
+categoria, com gasto entre 0 e 1 centenas de reais. Já na Figura 2 (b) o
+compartamento da vairiável gasto entre as duas categorias, cliente não
+cadastrado e cliente cadastrado, é relativamente parecido e parece que
+se tem uma menor dispersão de valores gastos para clientes não
+cadastrados, porém perceba que há várias observações que extrapolam o
+limite superior do box-plot.
+
+<<GastoX3, fig.cap="Scatter-plots de Gasto em relação a X3 e X4", fig.pos="H", fig.width=12>>=
+
+par(mfrow=c(1,2))
+plot(Gasto ~ X3, data=da, pch=20, col="blue", main="Distância")
+text(x=c(3, 1.30), y=c(5.23, 2.91), c(82, 66), cex=0.9)
+title(main="", sub="(a)")
+plot(Gasto ~ X4, data=da, pch=20, col="blue", main="Número de Pessoas")
+text(x=c(9.28, 6.28), y=c(5.23, 2.91), c(82, 66), cex=0.9)
+title(main="", sub="(b)")
+
+@
+
+Na Figura 3 observamos que em ambos os gráficos não temos uma forte
+relação (crescente ou decrescente) entre a variável resposta e as
+variáveis explicativas numéricas, porém perceba que a dispersão da
+variável resposta não parece ser constante entre os valores das
+variáveis explicativas, na Figura 3 (b) esta variação não constante é
+mais visível.
+
+Como complemento aos gráficos apresentados nas Figuras 2 e 3
+apresentaremos tabelas com medidas descritivas da variável gasto,
+estratificadas pelas categorias ou intervalos das variáveis
+explicativas.
+
+\begin{table}[H]
+  \caption{Medidas Descritivas de Gasto com Relação a X1}
+  \centering
+  \begin{tabular}{l|c|c|c}
+    \toprule
+    \multirow{2}{*}{Medidas} & \multicolumn{3}{c}{Categorias}\\
+    & Cartão de Crédito & Dinheiro & Vale Alimentação\\
+    \midrule
+    Min. & 0.10 &0.09 &0.06 \\
+    1st Qu. & 0.29 &  0.14 &  0.29 \\
+    Mediana & 0.48 &  0.21 &  0.48 \\
+    Média & 0.66 &  0.26 &  0.60 \\
+    3rd Qu. & 0.81 &  0.33 &  0.74 \\
+    Max. & 2.16 &  0.82 &  2.90 \\
+    Variância & 0.29 &  0.04 &  0.30 \\
+    Desvio Padrão & 0.54 &  0.19 &  0.55 \\
+    Coeficiente de Variação & 0.82 &  0.73 &  0.92 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[H]
+  \caption{Medidas Descritivas de Gasto com Relação a X2}
+  \centering
+  \begin{tabular}{l|c|c}
+    \toprule
+    \multirow{2}{*}{Medidas} & \multicolumn{2}{c}{Categorias}\\
+    & Cliente Cadastrado & Cliente Não Cadastrado \\
+    \midrule
+    Min. & 0.10 &0.06 \\
+    1st Qu. & 0.21 &  0.23 \\
+    Mediana & 0.57 &  0.38 \\
+    Média & 0.60 &  0.54 \\
+    3rd Qu. & 0.79 &  0.57 \\
+    Max. & 2.12 &  2.90 \\
+    Variância & 0.25 &  0.26 \\
+    Desvio Padrão & 0.50 &  0.51 \\
+    Coeficiente de Variação & 0.83 &  0.95 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[H]
+  \caption{Medidas Descritivas de Gasto com Relação a X3}
+  \centering
+  \small
+  \begin{tabular}{l|c|c|c|c}
+    \toprule
+    \multirow{2}{*}{Medidas} & \multicolumn{4}{c}{Faixas de Estudo em X3}\\
+    & Menor que o 1º Quartil & Entre o 1º e 2º Quartil & Entre o 2º e 3º Quartil & Maior 3º Quartil\\
+    \midrule
+    Min. & 0.06 &0.10 &0.09 &0.10 \\
+    1st Qu. & 0.22 &  0.22 &  0.37 &  0.21 \\
+    Mediana & 0.32 &  0.33 &  0.52 &  0.46 \\
+    Média & 0.51 &  0.55 &  0.54 &  0.63 \\
+    3rd Qu. & 0.51 &  0.62 &  0.58 &  0.84 \\
+    Max. & 2.90 &  2.12 &  1.34 &  2.11 \\
+    Variância & 0.39 &  0.29 &  0.10 &  0.26 \\
+    Desvio Padrão & 0.63 &  0.54 &  0.32 &  0.51 \\
+    Coeficiente de Variação & 1.24 &  0.97 &  0.60 &  0.82 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[H]
+  \caption{Medidas Descritivas de Gasto com Relação a X4}
+  \centering
+  \small
+  \begin{tabular}{l|c|c|c|c}
+    \toprule
+    \multirow{2}{*}{Medidas} & \multicolumn{4}{c}{Faixas de Estudo em X4}\\
+    & Menor que o 1º Quartil & Entre o 1º e 2º Quartil & Entre o 2º e 3º Quartil & Maior 3º Quartil\\
+    \midrule
+    Min. & 0.06 &0.09 &0.11 &0.53 \\
+    1st Qu. & 0.22 &  0.37 &  0.25 &  0.53 \\
+    Mediana & 0.35 &  0.47 &  0.50 &  0.54 \\
+    Média & 0.46 &  0.50 &  0.78 &  0.90 \\
+    3rd Qu. & 0.58 &  0.52 &  1.07 &  1.08 \\
+    Max. & 2.12 &  1.08 &  2.90 &  1.62 \\
+    Variância & 0.14 &  0.11 &  0.56 &  0.39 \\
+    Desvio Padrão & 0.37 &  0.33 &  0.75 &  0.63 \\
+    Coeficiente de Variação & 0.81 &  0.66 &  0.95 &  0.70 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Com base nos gráficos e tabelas apresentadas nesta seção optou-se pela
+retirada da observação 82, pois esta observação foi destacada em todos
+os gráficos descritos e também a sua retira altera razoavelmente as
+estatísticas calculadas na amostra.
+
+\subsection{Especificação do Modelo}
+Com base na análise descritiva será proposto um modelo linear
+generalizado assumindo distribuição Gama para a resposta e função de
+ligação inversa (canônica).
+
+\begin{equation*}
+  \begin{gathered}
+    y_i|\undertilde{x_i} \sim Gama(\theta_i, \phi_i)\\
+    \mu_i = \eta_i^{-1} = \frac{1}{\beta_0 + \beta_{11} x_{11i} +
+      \beta_{12} x_{12i} + \beta_2 x_{2i} + \beta_3 x_{3i} +
+      \beta_4 x_{4i}}
+  \end{gathered}
+\end{equation*}
+
+Abaixo defiremos as variáveis categórica inclusas no modelo, pois para estas variáveis temos categorias que são tomadas como referência.\\
+
+\begin{itemize}
+\item $X_{11} = \left\{\begin{matrix}
+      1, & \text{se } x_1 = \text{Dinheiro}  \\
+      0, & \text{caso contrário}
+    \end{matrix}\right.$ \\
+
+\item $X_{12} = \left\{\begin{matrix}
+      1, & \text{se } x_1 = \text{Vale Alimentação}  \\
+      0, & \text{caso contrário}
+    \end{matrix}\right.$ \\
+
+\item  $X_{2} = \left\{\begin{matrix}
+      1, & \text{se } x_2 = \text{Cliente não cadastrado}  \\
+      0, & \text{caso contrário}
+    \end{matrix}\right.$ \\
+\end{itemize}
+
+
+\subsection{Modelo Aditivo Saturado Ajustado}
+
+<<include=FALSE>>=
+
+da <- da[-82, ]
+
+## Modelo Linear Generalizado Gama com funcao de ligacao canonica
+model1 <- glm(Gasto ~ X1 + X2 + X3
+              + X4, family=Gamma(link = "inverse"), data=da)
+
+desviance <- deviance(model1)
+
+@
+
+Após definido o modelo na seção acima, ajustamos o modelo ao conjunto de
+dados e foram obtidas as seguintes estimativas para os parâmetros:
+
+\begin{table}[H]
+  \centering
+  \caption{Parâmetros do Modelo}
+  \begin{tabular}{lrr}
+    \hline
+    Parametro & Estimativa & Erro.Padrão \\
+    \hline
+    $\beta_0$ & 1.966 & 0.396 \\
+    $\beta_{11}$ & 2.279 & 0.635 \\
+    $\beta_{12}$ & 0.298 & 0.281 \\
+    $\beta_{2}$ & 0.373 & 0.289 \\
+    $\beta_{3}$ & -0.005 & 0.047 \\
+    $\beta_{4}$ & -0.191 & 0.049 \\
+    \hline
+  \end{tabular}
+\end{table}
+
+Com isso podemos definir nosso preditor linear, agora com as estimativas
+dos parâmetros.
+
+$$\widehat{\eta_i} = 1.966 + 2.279 x_{11i} + 0.298 x_{12i} + 0.373
+x_{2i} - 0.005 x_{3i} -0.191 x_{4i}$$
+
+E na escala da variável de interesse (gasto médio) a equação é escrita:
+
+$$\widehat{\mu_i} = \frac{1}{1.966 + 2.279 x_{11i} + 0.298 x_{12i} +
+  0.373 x_{2i} - 0.005 x_{3i} -0.191 x_{4i}}$$\\
+
+Percebemos, pelo sentido das estimativas dos parâmetros, que para
+clientes que pagam em dinheiro o gasto médio estimado será menor, assim
+como para os clientes que optam por vale alimentação. Já para os
+clientes cadastrados esperamos um gasto médio maior com relação aos não
+cadastrados, para uma distância maior e número de pessoas elevado também
+espera-se um gasto médio maior.
+
+O modelo ajustado apresentou um valor de \textit{deviance} igual a
+\Sexpr{desviance}
+
+\subsection{Parâmetro de Dispersão $\phi$}
+Para a distribuição Gama, associada a variável resposta, não temos o
+parâmetro de dispersão $\phi$ fixo, portanto este deverá ser estimado
+com base na amostra. Apresentaremos estimativas baseadas em três
+procedimentos de estimação diferentes.
+
+<<include=FALSE>>=
+
+## Por maxima verossimilhanca
+phi0 <- 1/gamma.shape(model1)$alpha; phi0
+
+## Pela deviance
+phi1=deviance(model1)/model1$df.residual;phi1
+
+## Pela estatística X2 de Pearson
+phi2=sum(residuals(model1,type='pearson')**2)/model1$df.residual;phi2
+
+@
+
+\begin{itemize}
+  \item Baseado na estatística $\chi^2$ de Pearson resultou em
+    $\widehat{\phi} = $\Sexpr{phi2};
+  \item Baseado na função desvio resultou em $\widehat{\phi} =$
+    \Sexpr{phi1};
+  \item Estimativa de máxima verossimilhança,baseada na função escore
+    resultou em $\widehat{\phi} =$ \Sexpr{phi0}.
+\end{itemize}
+
+\subsection{Modelos Alternativos}
+
+Nesta seção vamos propos alguns modelos, cujo distribuição associada é
+função de ligação serão as mesmas trabalhadas no modelo aditivo
+saturado, mas iremos alterar a combinaçao linear de parâmetros no
+preditor linear $\eta$. Abaixo temos os quatro preditores lineares que
+serão estudados, o primeiro será o aditivo estudado até aqui e os demais
+serão propostos agora:
+
+<<include=FALSE>>=
+
+## 1- X1, X2 e X4
+model2 <- glm(Gasto ~ X1 + X2 + X4,
+family=Gamma(link = "inverse"), data=da)
+
+## 2- X2 e X4
+model3 <- glm(Gasto ~ X2 + X4,
+family=Gamma(link = "inverse"), data=da)
+
+## 3- X2, X4 e X2*X4
+model4 <- glm(Gasto ~ X2 * X4,
+family=Gamma(link = "inverse"), data=da)
+
+@
+
+\begin{itemize}
+  \item Modelo1 - Efeito de todas as variáveis explicativas.\\
+    $\eta_i = \beta_0 + \beta_{11} x_{11i} + \beta_{12} x_{12i} +
+    \beta_2 x_{2i} + \beta_3 x_{3i} + \beta_4 x_{4i}$;
+  \item Modelo2 - Apenas o efeito de X1, X2 e X4.\\
+    $\eta_i = \beta_0 + \beta_{11} x_{11i} + \beta_{12} x_{12i} +
+    \beta_2 x_{2i} +  \beta_4 x_{4i}$;
+  \item Modelo3 - Apenas o efeito de X2 e X4.\\
+    $\eta_i = \beta_0 + \beta_2 x_{2i} + \beta_4 x_{4i}$;
+  \item Modelo4 - Efeito de X2 e X4 considerando a interação entre
+    elas.\\
+    $\eta_i = \beta_0 + \beta_2 x_{2i} + \beta_{4} x_{4i} + \beta_{5}
+    x_{4i}x_{2i}$.
+\end{itemize}
+
+Abaixo temos uma tabela com medidas de ajuste para cada um dos modelos.
+
+\begin{table}[H]
+  \centering
+  \caption{Medidas de Ajuste para os Modelos Propostos}
+  \begin{tabular}{ccccccc}
+    \hline
+    Modelo & Nparameters & LogLikMax & Deviance & X2Pearson & PseudoR2 & AIC \\
+    \hline
+    1 & 6 & -17.8599 & 46.5987 & 53.8356 & 0.4013 & 49.7198 \\
+    2 & 5 & -17.8647 & 46.6028 & 53.5603 & 0.4012 & 47.7294 \\
+    3 & 3 & -30.3681 & 58.6801 & 64.1607 & 0.2460 & 68.7362 \\
+    4 & 4 & -30.0821 & 58.3743 & 65.3195 & 0.2500 & 70.1641 \\
+    \hline
+  \end{tabular}
+\end{table}
+
+Percebemos através da Tabela 8 que há uma semelhança entre os modelos 1
+e 2 e entre os modelos 3 e 4 e também é nítida a diferença entre essas
+duas duplas. A primeira dupla de modelos (modelos 1 e 2) apresentaram um
+poder de explicação bem maior do que os modelos 3 e 4, devido ao
+possível efeito siginificativo das variável consideradasnestes
+modelos. Dentre os modelos 1 e 2 percebemos que há uma boa semelhança em
+quase todas as medidas de ajuste, indicando que o efeito da variável X3
+pode não ser significativo, note que o critério de Akaike é menor para o
+modelo 2, pois esta medida penaliza os modelos pelo numéro de
+parâmetros.
+
+Para comprovar os indícios observados na tabela 8 faremos uma sequência
+de testes estatísticos para comparação de modelos, os testes a seguir
+serão baseados na razão de verosimilhanças. Note nos testes abaixo que a
+distribuição adotada para a estatística do teste será a F de Snedecor,
+pois o parâmetro de dispersão precisou ser estimado.
+
+\begin{itemize}
+\item Modelo1 vs Modelo2\\
+
+  Hipóteses\\
+  $\left\{\begin{matrix}
+      H_0: \beta_3 = 0\\ H_a: \beta_3 \neq 0
+    \end{matrix}\right.$
+
+<<echo=FALSE>>=
+## model1 vs model2
+anova(model2, model1, test="F")
+@
+
+Como o p-valor foi extremamente alto ($>0.9$) não rejeitamos a hipótese
+nula, ou seja, o efeito da variável X3 não é siginificamente importância
+para explicar a variável resposta, confirmando os indícios observados
+anteriormente.
+
+\item Modelo1 vs Modelo3\\
+
+  Hipóteses\\
+  $\left\{\begin{matrix}
+      H_0: \beta_{11} = \beta_{12} = \beta_{3} = 0 \\
+      H_a: \beta_{1i} \neq 0 \text{ e/ou } \beta_{3}  \neq 0
+    \end{matrix}\right.$
+
+<<echo=FALSE>>=
+## model1 vs model2
+anova(model3, model1, test="F")
+@
+
+Como o p-valor foi extremamente baixo ($<0.001$) temos evidências para
+rejeitar a hipótese nula, ou seja, o efeito das variáveis X1 e X3,
+conjuntamento, não pode ser desprezado no modelo, pois são
+significamente importantes para explicar a variável resposta.
+
+\item Modelo3 vs Modelo4\\
+
+  Hipóteses\\
+  $\left\{\begin{matrix}
+      H_0: \beta_{5}  = 0 \\
+      H_a: \beta_{5}  \neq 0
+    \end{matrix}\right.$
+
+<<echo=FALSE>>=
+## model1 vs model2
+anova(model3, model4, test="F")
+@
+
+Como o p-valor foi alto ($>0.80$) não temos evidências para rejeitar a
+hipótese nula, ou seja, o efeito referente a interação entre X2 e X4 não
+é significativamente importante no modelo.
+\end{itemize}
+
+Perceba que não é correta a comparação entre os modelos 1 e 4 pelo teste
+de razão de verossimilhanças, pois eles não são modelos encaixados, isto
+é, não há uma restrição de parâmetros que os torne equivalentes.
+
+\subsection{Testes de Hipóteses}
+
+Considerando o modelo 1, apresentaremos nesta subseção alguns testes de
+hipóteses para os parâmetros do modelo.
+
+No software estatístico R temos duas função equivalentes que realizam
+análise de variância de modelos, são elas as funções \textit{anova} e
+\textit{car::Anova} que retornam valores particulares. Aplicaremos as
+duas funções no modelo 1 e apresentaremos seus resultados.
+
+<<echo=TRUE>>=
+
+anova(model1, test = "F")
+
+@
+
+<<echo=TRUE>>=
+
+car::Anova(model1, test = "F")
+
+@
+
+Observamos que as estatísticas do testes (apresentadas na coluna F) e
+suas respectivas significâncias são distintas entre os testes, isto se
+dá pois a função \textit{anova} realiza testes sequenciais ($\beta_0;
+\beta_1|\beta_0; \beta_2|\beta_1, \beta_0; ...$), ou seja, leva em
+consideração a ordem que as variáveis entraram no modelo. Já a função
+\textit{Anova}, da bilioteca \textit{car}, faz os teste os efeitos
+considerando todas as variáveis no modelo ($\beta_1|\beta_0, \beta_2,
+... \beta_p; \beta_2|\beta_0, \beta_1, ... \beta_p; ...$), ou seja, não
+é importante a ordem de entrada das variáveis no modelo. Normalmente o
+interesse está em testar os efeitos das variáveis com todas as demais já
+no modelo, portanto a função \textit{Anova} é mais indicada.
+
+Uma outra alternativa para testar o efeito dos parâmetros no modelo é
+considerando o teste de Wald, que utiliza a distribuição assintótica dos
+estimadores de máxima verossimilhança.
+
+<<echo=TRUE>>=
+
+summary(model1)
+
+@
+
+As significâncias deste teste agora estão associadas a cada parâmetro
+presente no modelo, ou seja, para a variável X1 como temos três
+categórias que a definem teremos dois parâmetros no modelo e serão
+apresentadas siginificância para estes dois parâmetros. Na figura acima
+podemos observar que as variáveis X3 e X2 não acrecentam grande poder de
+explicação no modelo, devido as seus altos p-valores, ainda é importânte
+ressaltar que para o parâmetro $\beta_{12}$ (representado por X1Vale
+Alimentação) apresentou um alto p-valor, porém por estar associado a
+variável X1, e um de seus dois parâmetros apresentou alta significância,
+não é pertinente interpretar a variável como de efeito não
+significativo.
+
+Com as estimativas para os parâmetros em mãos podemos construir
+intervalos de confiança e novamente temos duas metodologias que serão
+apresentadas: a primeira será baseada no perfilamento da
+verossimilhanças (LogLik) e a segunda será baseada na estatística de
+Wald.
+
+\begin{table}[H]
+  \caption{Intervalos de Confiança para os Parâmetros (95\% de confiança)}
+  \centering
+  \small
+  \begin{tabular}{l|cc|cc}
+    \toprule
+    \multirow{2}{*}{Parâmetros} & \multicolumn{2}{c}{LogLik} & \multicolumn{2}{c}{Wald}\\
+    & 2.5\% & 97.5\% & 2.5\% & 97.5\%\\
+    \midrule
+    $\beta_0$ & 1.210417 & 2.765588 & 1.189159 & 2.742483 \\ \\
+    $\beta_{11}$ & 1.147657 & 3.648989 & 1.033037 & 3.524112 \\ \\
+    $\beta_{12}$ & -0.238562 & 0.874893 & -0.252600 & 0.847685 \\ \\
+    $\beta_2$ & -0.251507 & 0.895279 & -0.194361 & 0.940240 \\ \\
+    $\beta_3$ & -0.099438 & 0.085835 & -0.097953 & 0.087203 \\ \\
+    $\beta_4$ & -0.280506 & -0.088778 & -0.286795 & -0.094713 \\\\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Observamos pela Tabela 9 que há diferenças entre os intervalos de
+confiança baseados no perfil de verossimilhança e baseados na estaística
+de Wald, esta diferença se dá pois o teste de Wald se baseia na
+normalidade assintótica dos estimadores de máxima
+verossimilhança. Perceba que mesmo com as diferenças pontuais dos
+intervalos, não houve divergências nas interpretações, fazendo ligação
+com os testes de hipóteses, interpreta-se como efeitos não
+significativos aqueles nos quais o valor zero está contido no intervalo.
+
+\subsection{Seleção de Variáveis}
+
+Nesta seção utilizaremos do algoritmo \textit{stepwise}, que fará a
+permutação de variáveis dentro do modelo, com o critério de seleção de
+variáveis critério de Akaike (AIC), pois este penaliza os modelos com um
+número excessivo de parâmetros.
+
+Primeiramente faremos a permutação de variáveis a serem inclusas no
+modelos utilizando como modelo completo o modelo aditivo com X1, X2, X3
+e X4. E posteriormente consideraremos como modelo completo o modelo
+considerando todas as variáveis explicativas X1, X2, X3 e X4 e mais suas
+interações duplas. Abaixo são apresentadas a última iteração do
+algoritmo para ambas as especificações.
+
+\begin{itemize}
+\item Considerando como modelo completo o aditivo com X1, X2, X3 e X4.
+  \begin{knitrout}\small
+    \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{verbatim}
+## Step:  AIC=43.27
+## Gasto ~ X1 + X4
+##
+##        Df Deviance    AIC
+## <none>      47.450 43.266
+## + X2    1   46.600 43.764
+## + X3    1   47.448 45.262
+## - X4    1   54.684 54.048
+## - X1    2   58.274 58.391
+##
+## Call:  glm(formula = Gasto ~ X1 + X4, family = Gamma(link = "inverse"),
+##     data = da)
+##
+## Coefficients:
+##        (Intercept)          X1Dinheiro  X1Vale Alimentação                  X4
+##             2.2233              2.2262              0.2787             -0.1866
+##
+## Degrees of Freedom: 98 Total (i.e. Null);  95 Residual
+## Null Deviance:      66.18
+## Residual Deviance: 47.45 	AIC: 43.27
+\end{verbatim}
+    \end{kframe}
+  \end{knitrout}
+
+\item Considerando como modelo completo o modelo com X1, X2, X3, X4 e
+  mais suas interações de segunda ordem.
+  \begin{knitrout}\small
+    \definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{verbatim}
+## Step:  AIC=43.27
+## Gasto ~ X1 + X4
+##
+##         Df Deviance    AIC
+## <none>       47.450 43.266
+## + X2     1   46.600 43.764
+## + X3     1   47.448 45.262
+## + X1:X4  2   46.642 45.839
+## - X4     1   54.684 54.048
+## - X1     2   58.274 58.391
+##
+## Call:  glm(formula = Gasto ~ X1 + X4, family = Gamma(link = "inverse"),
+##     data = da)
+##
+## Coefficients:
+##        (Intercept)          X1Dinheiro  X1Vale Alimentação                  X4
+##             2.2233              2.2262              0.2787             -0.1866
+##
+## Degrees of Freedom: 98 Total (i.e. Null);  95 Residual
+## Null Deviance:      66.18
+## Residual Deviance: 47.45 	AIC: 43.27
+\end{verbatim}
+    \end{kframe}
+  \end{knitrout}
+\end{itemize}
+
+Em ambas as especificações o algoritimo, utilizando o AIC como critério
+de seleção, nos retornou o mesmo modelo, ou seja, não há interações de
+segunda ordem que sejam relevantes para o modelo assim como as variável
+X2 e X3. Observe que utlizando o algoritmo, chegamos no modelo que
+também seria encontrado utlizando as análises anteriores, pois as
+variáveis X2 e X3 foram as que apresentaram fortes indícios de não
+significância para o modelo.
+
+Portanto como modelo proposto ajustado temos:
+\begin{equation}
+  \begin{gathered}
+    y_i|\undertilde{x_i} \sim Gama(\theta_i, \phi_i)\\
+    \widehat{\mu_i} = \frac{1}{2.223 + 2.226 x_{11i} + 0.279 x_{12i}
+      - 0.187 x_{4i}}$$
+  \end{gathered}
+\end{equation}
+
+\section{Aplicação do modelo}
+Como exemplo didático continuaremos com o modelo 1 e o utilizaremos para
+estimador o gasto médio de clientes com os seguintes perfis:
+
+\begin{table}[H]
+  \centering
+  \caption{Perfil de indíviduos para estimação}
+  \begin{tabular}{cllrr}
+    \hline
+    Indíviduo & X2 & X1 & X3 & X4 \\
+    \hline
+    1 & Cliente cadastrado & Dinheiro & 5.0 & 2.0 \\
+    2 & Cliente cadastrado & Dinheiro & 5.0 & 5.0 \\
+    3 & Cliente cadastrado & Cartão de crédito & 5.0 & 2.0 \\
+    4 & Cliente cadastrado & Vale Alimentação & 5.0 & 2.0 \\
+    \hline
+  \end{tabular}
+\end{table}
+
+Com base na tabela 10 foram estimados os gastos médios para cada
+indivíduo, o erro padrão da estimativa e seus respectivos intervalos de
+confiança. Abaixo temos uma tabela com essas medidas.
+
+\begin{table}[H]
+  \centering
+  \caption{Estimativas para o Gasto Médio e Intervalo de Confiança}
+  \small
+  \begin{tabular}{c|cc|cc}
+    \toprule
+    Indivíduo & \multicolumn{2}{c}{Estimativas} & \multicolumn{2}{c}{Intervalo de Confiança}\\
+    & Gasto Estimado & Erro Padrão & Lower 2.5\% & Upper 97.5\% \\
+    \midrule
+    1 & 0.261 & 0.044 & 0.175 & 0.347 \\
+    2 & 0.306 & 0.061 & 0.188 & 0.425 \\
+    3 & 0.642 & 0.120 & 0.407 & 0.877 \\
+    4 & 0.539 & 0.102 & 0.339 & 0.739 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Então para o primeiro indivíduo, um cliente cadastrado que pagou sua
+última compra em dinheiro, reside a 5 km do mercado e tem 2 pessoas
+morando wm sua casa, estima-se um gasto médio de 175 a 347 reais, da
+mesma forma para os outros indivíduos. Note que a única diferença entre
+o primeiro e segundo indivíduo é o aumento no número de pessoas que
+moram com ele e perceba que a estimativa para o gasto médio também
+aumentou, já entre os indivíduos 3 e 4 a diferença está na forma de
+pagamento e temos para o indivíduo que optou pela forma de pagamento
+vale alimentação um gasto médio estimado menor. Este acréscimo e
+decréscimo na estimativa do gasto médio com relação as variáveis
+explicativas já era esperado, veja a interpretação na seção 2.3.
+
+\end{document}

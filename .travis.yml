@@ -1,6 +1,7 @@
 language: r
 
 before_script:
+  - sudo apt-get install texlive-lang-portuguese
   - chmod +x ./_deploy.sh
 
 script:

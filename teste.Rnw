@@ -15,6 +15,9 @@
 
 \begin{document}
 
-Testando
+Testando à caçador com muitos acentos com por exemplo coração, dragão,
+etc. Além de que estou escrevendo bastante coisa para ver se a
+hifienação ocorre de forma esperada (quebrando as sílabas conforme o
+idioma português do Brasil).
 
 \end{document}

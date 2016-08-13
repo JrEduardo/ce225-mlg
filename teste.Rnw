@@ -11,7 +11,7 @@
 \usepackage{array}    % Uma implementação melhor do tabular
 \usepackage{booktabs} % Linhas horizontais para tabelas
 \usepackage{multirow} % Permite uma célula de várias linha
-\usepackage{vwcol}
+% \usepackage{vwcol}
 
 \begin{document}
 

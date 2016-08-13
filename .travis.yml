@@ -10,6 +10,5 @@ before_script:
 
 script:
   - Rscript -e "source('_render.R')"
-  - tex --version
-  - pdflatex teste.tex
+  - Rscript -e "source('_render.R')"
   - ls

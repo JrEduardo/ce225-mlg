@@ -1,6 +1,6 @@
 \documentclass[a4paper]{article} %% Classe do documento
 \usepackage[margin=2cm]{geometry} %% Dimens?es das margens
-\usepackage[brazil]{babel} %% Idioma
+\usepackage[portuguese]{babel} %% Idioma
 \usepackage[utf8x]{inputenc} %% Codifica??o de caracteres
 \usepackage{amsmath} %% S?mbolos/express?es/ambientes matem?ticos
 \usepackage{graphicx} %% Inserir figuras em qualquer extens?o

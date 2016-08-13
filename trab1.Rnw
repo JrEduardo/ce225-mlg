@@ -566,8 +566,8 @@ var3 <- xyplot(fit~ndias, pred3, type=c("l","g"),
                          cex=cex1),
                xlab=list(label ="Número de Dias Frios", cex=cex))
 
-grid.arrange(var1, var2, var3, ncol=3,
-             top="Relações Marginais do Modelo Proposto")
+gridExtra::grid.arrange(var1, var2, var3, ncol=3,
+                        top="Relações Marginais do Modelo Proposto")
 
 @
 

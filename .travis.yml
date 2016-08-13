@@ -1,7 +1,11 @@
 language: r
 
+addons:
+  apt:
+    packages:
+      - texlive-lang-portuguese
+
 before_script:
-  - sudo apt-get install texlive-lang-portuguese
   - chmod +x ./_deploy.sh
 
 script:

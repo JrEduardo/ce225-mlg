@@ -1,14 +1,9 @@
 language: r
 
-addons:
-  apt:
-    packages:
-      - texlive-lang-portuguese
-
 before_script:
   - chmod +x ./_deploy.sh
 
 script:
   - Rscript -e "source('_render.R')"
   - Rscript -e "source('_render.R')"
-  - ls
+  - ./_deploy.sh

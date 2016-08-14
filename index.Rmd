@@ -1,6 +1,6 @@
 ---
-title: "Introdução ao Machine Learning"
-subtitle: "Disciplina CE064 da graduação em Estatística UFPR"
+title: "Modelos Lineares Generalizados"
+subtitle: "Disciplina CE225 da graduação em Estatística UFPR"
 output: html_document
 ---
 

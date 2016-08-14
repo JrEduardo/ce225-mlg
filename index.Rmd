@@ -1,0 +1,48 @@
+---
+title: "Introdução ao Machine Learning"
+subtitle: "Disciplina CE064 da graduação em Estatística UFPR"
+output: html_document
+---
+
+Página dedicada à disponibilização dos materiais elaborados na
+disciplina [CE225 - Modelos Lineares Generalizados][ce225], ofertada
+pelo departamento de Estatística na Universidade Federal do Paraná como
+disciplina obrigatória, ministrada pelo professor
+[Cesar Taconeli][taconeli].
+
+Na disciplina seguimos as notas de aula disponibilizadas pelo professor
+e a principal referência utilziada foi o livro
+[Modelo de Regressão com apoio computacional][livro] do professor
+Gilberto de Paula.
+
+Os arquivos elaborados durante a disciplina são essencialmente
+aplicações de modelos lieares generalizados e estão disponíveis nos
+links abaixo, em formato pdf. Para consultar os arquivos fontes que
+geraram esses documentos visite o
+[repositório GitHub da disciplina][ce225-mlg]:
+
+Tópicos em GLM abordados com aplicações:
+
+```{r, results="asis", echo = FALSE}
+
+titles <- c("Regressão Linear Múltipla",
+            "Família Exponencial de Distribuições",
+            "Modelo de Regressão Gama",
+            "Modelo de Regressão Binomial",
+            "Modelo de Regressão Poisson")
+files <- paste0("trab", 1:5,  ".pdf")
+
+cat(paste0(" * ",
+           paste0("[", titles, "]"),
+           paste0("(./", files, ")")),
+    sep = "\n")
+
+```
+
+<!--------------------------------------------- -->
+[ce225]: http://www.est.ufpr.br/
+[taconeli]: https://docs.ufpr.br/~taconeli/
+[livro]: https://www.ime.usp.br/~giapaula/textoregressao.htm
+[GNU General Public License, versão 3]: https://www.gnu.org/licenses/gpl-3.0.html
+[`LICENSE.md`]: https://github.com/JrEduardo/ce225-mlg/blob/master/LICENSE.md
+[ce225-mlg]: https://github.com/JrEduardo/ce225-mlg

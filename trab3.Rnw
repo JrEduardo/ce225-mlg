@@ -47,7 +47,7 @@ library(knitr)
 library(xtable)
 opts_chunk$set(tidy=FALSE,
                size="small",
-               cache=TRUE,
+               cache=FALSE,
                echo=FALSE,
                fig.align="center",
                fig.width=6,

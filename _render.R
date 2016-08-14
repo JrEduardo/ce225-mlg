@@ -15,7 +15,7 @@ cat("## @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ ##",
 ##            try(knitr::knit2pdf(x))
 ##        })
 
-knitr::knit2pdf("trab1.Rnw")
-knitr::knit2pdf("trab3.Rnw")
-knitr::knit2pdf("trab4.Rnw")
-knitr::knit2pdf("trab5.Rnw")
+try(knitr::knit2pdf("trab1.Rnw"))
+try(knitr::knit2pdf("trab3.Rnw"))
+try(knitr::knit2pdf("trab4.Rnw"))
+try(knitr::knit2pdf("trab5.Rnw"))

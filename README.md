@@ -16,7 +16,7 @@ Gilberto de Paula.
 
 A disciplina foi composta de aulas teóricas e práticas com material
 expositivo (slides e notas de aula). Como avaliação foram realizadas
-duas avaliação discursivas e alguns trabalhos que são objeto desse
+duas provas discursivas e alguns trabalhos que são armazenados nesse
 repositório.
 
 Para sugestões, críticas ou relato de problemas abra uma _issue_ em
